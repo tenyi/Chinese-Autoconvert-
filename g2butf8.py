@@ -64,7 +64,6 @@ def getUserDic(filename):
 				key = words[0].lstrip().rstrip();
 				value = words[1].lstrip().rstrip();
 				user_dic[key] = value;
-
 		return user_dic
 	
 #user dictionary file
@@ -110,8 +109,10 @@ def convertFile(target_file):
 
 			newcontent = jtof(utf8content)
 			lines = newcontent.splitlines();
+			idx=0
 			for line in lines:
-				line = convertVocabulary(line, dic_tw());
+				lines[idx] = convertVocabulary(line, dic_tw());
+				idx += 1
 				
 			if os.path.getsize(target_file) > 0:
 				# do backup
@@ -127,11 +128,13 @@ def convertFile(target_file):
 				if os.path.exists(user_dic_pathname):
 					user_dic = getUserDic(user_dic_pathname);
 					if len(user_dic) > 0:
+						idx=0
 						for line in lines:
-							line = convertVocabulary(line,  user_dic);
+							lines[idx] = convertVocabulary(line, user_dic);
+							idx += 1
 
 				for line in lines:
-					line = convertVocabulary(line,  user_dic);
+					#line = convertVocabulary(line,  user_dic);
 					fpw.write(line.encode('UTF-8'))
 					fpw.write("\n");
 				fpw.close();

@@ -90,7 +90,6 @@ dir_separator = os.path.sep
 
 
 def convertFile(target_file):
-	user_dic= {}
 	if os.path.exists(target_file):
 		f_encoding = getEncoding(target_file)
 		print u"正在轉換", target_file, u" 編碼為: ", f_encoding
@@ -106,7 +105,7 @@ def convertFile(target_file):
 			if original_content.startswith( codecs.BOM_UTF8 ):
 				original_content = original_content.lstrip( codecs.BOM_UTF8);	
 			
-			utf8content=original_content.decode(f_encoding, 'ignore')
+			utf8content=original_content.decode(f_encoding)
 
 			newcontent = jtof(utf8content)
 			lines = newcontent.splitlines();
@@ -133,6 +132,9 @@ def convertFile(target_file):
 						for line in lines:
 							lines[idx] = convertVocabulary(line, user_dic);
 							idx += 1
+
+				for line in lines:
+					#line = convertVocabulary(line,  user_dic);
 					fpw.write(line.encode('UTF-8'))
 					fpw.write("\n");
 				fpw.close();

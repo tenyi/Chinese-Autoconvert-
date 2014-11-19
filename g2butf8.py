@@ -42,32 +42,6 @@ def getEncodingByContent(content):
 	detector.feed(content)
 	detector.close()
 	return detector.result["encoding"]
-
-# get user define dictionary
-def getUserDic(filename):
-	user_dic= {}
-	if os.path.exists(filename):
-		f_encoding = getEncoding(filename)
-		if f_encoding == None:
-			print (u"抱歉, 未能正確判斷自定字典編碼！\n\n");
-		else:
-			fpr = open(filename, 'r');
-			lines = fpr.readlines();
-			fpr.close();
-
-			if lines[0].startswith(codecs.BOM_UTF8 ):
-				lines[0] = lines[0].lstrip(codecs.BOM_UTF8 );
-				
-			for line  in lines:
-				line = line.decode(f_encoding);
-				words = line.split('=')
-				key = words[0].lstrip().rstrip();
-				value = words[1].lstrip().rstrip();
-				user_dic[key] = value;
-		return user_dic
-	
-#user dictionary file
-user_dic_file = 'userdic.txt'
 	
 # start error message
 
@@ -90,56 +64,39 @@ dir_separator = os.path.sep
 
 
 def convertFile(target_file):
-	user_dic= {}
-	if os.path.exists(target_file):
-		f_encoding = getEncoding(target_file)
-		print u"正在轉換", target_file, u" 編碼為: ", f_encoding
-		if f_encoding == None:
-			print (u"抱歉, 未能正確判斷編碼！\n\n");
+	f_encoding = getEncoding(target_file)
+	print u"正在轉換", target_file, u" 編碼為: ", f_encoding
+	if f_encoding == None:
+		print (u"抱歉, 未能正確判斷編碼！\n\n");
+	else:
+		result_content = u''
+		original_content = u''
+		fp = open(target_file, 'r')
+		original_content = fp.read()
+		fp.close()
+		
+		if original_content.startswith( codecs.BOM_UTF8 ):
+			original_content.lstrip( codecs.BOM_UTF8);	
+			
+		utf8content=original_content.decode(f_encoding)
+		
+
+
+		newcontent = jtof(utf8content)
+		newcontent = convertVocabulary(newcontent, dic_tw());
+		if os.path.getsize(target_file) > 0:
+			# do backup
+			backup_file = target_file + '.bak'
+			shutil.copy2(target_file, backup_file)
+			fpw = open(target_file, 'w')
+			if not newcontent.startswith(codecs.BOM_UTF8.decode( "utf8" )):
+				fpw.write(codecs.BOM_UTF8)
+			fpw.write(newcontent.encode('UTF-8'))
+			fpw.close();
+		
+			print (MSG_CONVERT_FINISH)
 		else:
-			result_content = u''
-			original_content = u''
-			fp = open(target_file, 'r')
-			original_content = fp.read()
-			fp.close()
-			
-			if original_content.startswith( codecs.BOM_UTF8 ):
-				original_content = original_content.lstrip( codecs.BOM_UTF8);	
-			
-			utf8content=original_content.decode(f_encoding, 'ignore')
-
-			newcontent = jtof(utf8content)
-			lines = newcontent.splitlines();
-			idx=0
-			for line in lines:
-				lines[idx] = convertVocabulary(line, dic_tw());
-				idx += 1
-				
-			if os.path.getsize(target_file) > 0:
-				# do backup
-				backup_file = target_file + '.bak'
-				shutil.copy2(target_file, backup_file)
-				fpw = open(target_file, 'w')
-				if not newcontent.startswith(codecs.BOM_UTF8.decode( "utf8" )):
-					fpw.write(codecs.BOM_UTF8)
-
-				pathdir =os.path.dirname(os.path.abspath(target_file));
-				user_dic_pathname = pathdir +os.path.sep+user_dic_file;
-				
-				if os.path.exists(user_dic_pathname):
-					user_dic = getUserDic(user_dic_pathname);
-					if len(user_dic) > 0:
-						idx=0
-						for line in lines:
-							lines[idx] = convertVocabulary(line, user_dic);
-							idx += 1
-					fpw.write(line.encode('UTF-8'))
-					fpw.write("\n");
-				fpw.close();
-				
-				print (MSG_CONVERT_FINISH)
-			else:
-				print MSG_NO_CONVERT
+			print MSG_NO_CONVERT
 			
 			
 if __name__ == "__main__":

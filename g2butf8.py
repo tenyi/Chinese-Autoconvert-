@@ -78,7 +78,7 @@ def convertFile(target_file):
 		if original_content.startswith( codecs.BOM_UTF8 ):
 			original_content.lstrip( codecs.BOM_UTF8);	
 			
-		utf8content=original_content.decode(f_encoding)
+		utf8content=original_content.decode(f_encoding, 'ignore')
 		
 
 

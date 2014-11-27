@@ -89,10 +89,7 @@ sudo python setup.py install
 #!shell
 
 cd /tmp
-#wget http://chardet.feedparser.org/download/python2-chardet-2.0.1.tgz
-#已倒站換個URL
-wget http://pkgs.fedoraproject.org/repo/pkgs/python-chardet/python2-chardet-2.0.1.tgz/ec771971bab5dd1943a10362ebd2fd4c/python2-chardet-2.0.1.tgz
-tar xzf python2-chardet-2.0.1.tgz
+wget https://pypi.python.org/packages/source/c/chardet/chardet-2.3.0.tar.gztar xzf python2-chardet-2.0.1.tgz
 cd python2-chardet-2.0.1
 python setup.py build
 sudo python setup.py install
@@ -124,10 +121,7 @@ sudo python setup.py install
 #!shell
 
 cd /tmp
-#wget http://chardet.feedparser.org/download/python2-chardet-2.0.1.tgz
-#已倒站換個URL
-wget http://pkgs.fedoraproject.org/repo/pkgs/python-chardet/python2-chardet-2.0.1.tgz/ec771971bab5dd1943a10362ebd2fd4c/python2-chardet-2.0.1.tgz
-tar xzf python2-chardet-2.0.1.tgz
+wget https://pypi.python.org/packages/source/c/chardet/chardet-2.3.0.tar.gztar xzf python2-chardet-2.0.1.tgz
 cd python2-chardet-2.0.1
 python setup.py build
 sudo python setup.py install

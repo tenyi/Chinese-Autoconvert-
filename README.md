@@ -1,6 +1,6 @@
 #Readme 說明 （內有安裝步驟）
 
-= Introduction 說明 =
+## Introduction ##
 
 Auto convert locae Chinese  vocabulary program.
 
@@ -16,7 +16,7 @@ Auto convert locae Chinese  vocabulary program.
 頭發=頭髮
 內存=記憶體
 
-= 使用方法 =
+## 使用方法 ##
 
 Windows:
 {{{
@@ -28,14 +28,14 @@ Mac、Linux:
 python g2butf8.py ~/城市獵人/*.srt
 }}}
 
-= Details　細節  =
+ ## Details　細節 ## 
 
 原本打算用C語言，因為某些庫編譯太麻煩，相依性過高，後來改用Python實作。
 目前採用Pyhon 2，有空會修改出Python 3版本
 
-= Install 安裝 =
+ ## Install 安裝 ## 
 
-===Linux:===
+### Linux: ###
 
 1. 安裝 easy_install
 
@@ -74,7 +74,7 @@ sudo python setup.py install
 }}}
 最後，解開此處的src包，在g2butf8目錄下，執行 python g2butf8.py 即可
 
-===Mac: ===
+### Mac ###: 
 1. 安裝 Universal Encoding Detector 
 {{{
 cd /tmp
@@ -97,7 +97,7 @@ sudo python setup.py install
 }}}
 最後，解開此處的src包，在g2butf8目錄下，執行 python g2butf8.py 即可
 
-===Windows:===
+### Windows: ###
   沒有裝Python也沒關係，下載Windows的zip包解開即可用．
 
 [https://drive.google.com/file/d/0B_twESMPpEmWSEFMTXRSWTBaZWs/view?usp=sharing  g2butf8_amd64.zip] 

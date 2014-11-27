@@ -33,27 +33,43 @@ python g2butf8.py ~/城市獵人/*.srt
 原本打算用C語言，因為某些庫編譯太麻煩，相依性過高，後來改用Python實作。
 目前採用Pyhon 2，有空會修改出Python 3版本
 
- ## Install 安裝 ## 
+## Install 安裝 ##
 
 ### Linux: ###
 
 1. 安裝 easy_install
 
 Ubuntu:
-{{{
+
+
+
+```
+#!shell
+
 sudo apt-get install python-setuptools
-}}}
+```
+
+
+
 其他dist:
-{{{
+
+```
+#!shell
+
 cd /tmp
 wget http://pypi.python.org/packages/source/s/setuptools/setuptools-0.6c11.tar.gz
 tar xzf /setuptools-0.6c11.tar.gz
 cd setuptools-0.6c11
 python setup.py build
 sudo python setup.py install
-}}}
+```
+
 2. 安裝 Universal Encoding Detector
-{{{
+
+
+```
+#!shell
+
 cd /tmp
 #wget http://chardet.feedparser.org/download/python2-chardet-2.0.1.tgz
 #已倒站換個URL
@@ -62,23 +78,33 @@ tar xzf python2-chardet-2.0.1.tgz
 cd python2-chardet-2.0.1
 python setup.py build
 sudo python setup.py install
-}}}
+```
+
+
 3. 安裝 python-jianfan
-{{{
+
+```
+#!shell
+
 cd /tmp
 wget http://python-jianfan.googlecode.com/files/jianfan-0.0.1.tar.gz
 tar xzf jianfan-0.0.1.tar.gz
 cd jianfan-0.0.1
 python setup.py build
 sudo python setup.py install
-}}}
+```
+
 最後，解開此處的src包，在g2butf8目錄下，執行 python g2butf8.py 即可
 
 ### Mac : ###
 
  
 1. 安裝 Universal Encoding Detector 
-{{{
+
+
+```
+#!shell
+
 cd /tmp
 #wget http://chardet.feedparser.org/download/python2-chardet-2.0.1.tgz
 #已倒站換個URL
@@ -87,16 +113,24 @@ tar xzf python2-chardet-2.0.1.tgz
 cd python2-chardet-2.0.1
 python setup.py build
 sudo python setup.py install
-}}}
+```
+
+
 2. 安裝 python-jianfan
-{{{
+
+
+```
+#!shell
+
 cd /tmp
 wget http://python-jianfan.googlecode.com/files/jianfan-0.0.1.tar.gz
 tar xzf jianfan-0.0.1.tar.gz
 cd jianfan-0.0.1
 python setup.py build
 sudo python setup.py install
-}}}
+```
+
+
 最後，解開此處的src包，在g2butf8目錄下，執行 python g2butf8.py 即可
 
 ### Windows: ###

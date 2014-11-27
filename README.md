@@ -37,7 +37,7 @@ python g2butf8.py ~/城市獵人/*.srt
 
 ### Linux: ###
 
-1. 安裝 easy_install
+1. 安裝 easy_install:
 
 Ubuntu:
 
@@ -136,15 +136,16 @@ sudo python setup.py install
 ### Windows: ###
   沒有裝Python也沒關係，下載Windows的zip包解開即可用．
 
-[https://drive.google.com/file/d/0B_twESMPpEmWSEFMTXRSWTBaZWs/view?usp=sharing  g2butf8_amd64.zip] 
+[g2butf8_amd64.zip](https://drive.google.com/file/d/0B_twESMPpEmWSEFMTXRSWTBaZWs/view?usp=sharing  ) 
 
-[https://drive.google.com/file/d/0B_twESMPpEmWdmxyZHVDOUFYemM/view?usp=sharing g2butf8_win32.zip] 
+[g2butf8_win32.zip] (https://drive.google.com/file/d/0B_twESMPpEmWdmxyZHVDOUFYemM/view?usp=sharing)
 
-= Reference 參考資料及函式庫  =
-[http://gerry.lamost.org/blog/?p=603 Python简繁转换]
+**Reference 參考資料及函式庫**
 
-[http://chardet.feedparser.org/ Universal Encoding Detector]
+[Python简繁转换](http://gerry.lamost.org/blog/?p=603)
 
-[http://code.google.com/p/opencc/ opencc 開放中文轉換]
+[Universal Encoding Detector](http://chardet.feedparser.org/)
 
-[http://farmdev.com/talks/unicode/ Unicode In Python, Completely Demystified]
+[開放中文轉換](http://code.google.com/p/opencc/ opencc)
+
+[Unicode In Python, Completely Demystified](http://farmdev.com/talks/unicode/)

@@ -13,20 +13,38 @@ Auto convert locae Chinese  vocabulary program.
 使用說明: g2butf8 [檔名]
 
 若有特別的轉換需求，可以在要轉檔的目錄下放 userdic.txt ，範例內容:
+
+```
+#!text
+
 頭發=頭髮
 內存=記憶體
+```
+
 
  **使用方法** 
 
 Windows:
-{{{
+
+
+```
+#!shell
+
 g2butf8 c:\城市獵人\*.srt
-}}}
+```
+
+
 
 Mac、Linux:
-{{{
+
+
+```
+#!shell
+
 python g2butf8.py ~/城市獵人/*.srt
-}}}
+```
+
+
 
  **Details　細節**
 
@@ -138,7 +156,7 @@ sudo python setup.py install
 
 [g2butf8_amd64.zip](https://drive.google.com/file/d/0B_twESMPpEmWSEFMTXRSWTBaZWs/view?usp=sharing  ) 
 
-[g2butf8_win32.zip] (https://drive.google.com/file/d/0B_twESMPpEmWdmxyZHVDOUFYemM/view?usp=sharing)
+[g2butf8_win32.zip](https://drive.google.com/file/d/0B_twESMPpEmWdmxyZHVDOUFYemM/view?usp=sharing)
 
 **Reference 參考資料及函式庫**
 

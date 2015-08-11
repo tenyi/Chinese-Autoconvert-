@@ -55,58 +55,21 @@ python g2butf8.py ~/城市獵人/*.srt
 
 ### Linux: ###
 
-1. 安裝 easy_install:
 
-Ubuntu:
-
+1. 安裝 Universal Encoding Detector
 
 
 ```
-#!shell
-
-sudo apt-get install python-setuptools
-```
-
-
-
-其他dist:
+#pip install chardet
 
 ```
-#!shell
 
-cd /tmp
-wget http://pypi.python.org/packages/source/s/setuptools/setuptools-0.6c11.tar.gz
-tar xzf /setuptools-0.6c11.tar.gz
-cd setuptools-0.6c11
-python setup.py build
-sudo python setup.py install
-```
 
-2. 安裝 Universal Encoding Detector
-
+2. 安裝 python-jianfan
 
 ```
-#!shell
+#pip install jianfan
 
-cd /tmp
-wget https://pypi.python.org/packages/source/c/chardet/chardet-2.3.0.tar.gztar xzf python2-chardet-2.0.1.tgz
-cd python2-chardet-2.0.1
-python setup.py build
-sudo python setup.py install
-```
-
-
-3. 安裝 python-jianfan
-
-```
-#!shell
-
-cd /tmp
-wget http://python-jianfan.googlecode.com/files/jianfan-0.0.1.tar.gz
-tar xzf jianfan-0.0.1.tar.gz
-cd jianfan-0.0.1
-python setup.py build
-sudo python setup.py install
 ```
 
 最後，解開此處的src包，在g2butf8目錄下，執行 python g2butf8.py 即可
@@ -114,32 +77,20 @@ sudo python setup.py install
 ### Mac : ###
 
  
-1. 安裝 Universal Encoding Detector 
+1. 安裝 Universal Encoding Detector
 
 
 ```
-#!shell
+#pip install chardet
 
-cd /tmp
-wget https://pypi.python.org/packages/source/c/chardet/chardet-2.3.0.tar.gztar xzf python2-chardet-2.0.1.tgz
-cd python2-chardet-2.0.1
-python setup.py build
-sudo python setup.py install
 ```
 
 
 2. 安裝 python-jianfan
 
-
 ```
-#!shell
+#pip install jianfan
 
-cd /tmp
-wget http://python-jianfan.googlecode.com/files/jianfan-0.0.1.tar.gz
-tar xzf jianfan-0.0.1.tar.gz
-cd jianfan-0.0.1
-python setup.py build
-sudo python setup.py install
 ```
 
 
@@ -148,9 +99,9 @@ sudo python setup.py install
 ### Windows: ###
   沒有裝Python也沒關係，下載Windows的zip包解開即可用．
 
-[g2butf8_amd64.zip](https://drive.google.com/file/d/0B_twESMPpEmWSEFMTXRSWTBaZWs/view?usp=sharing  ) 
+[g2butf8_amd64.zip](https://drive.google.com/file/d/0B_twESMPpEmWSEFMTXRSWTBaZWs/view?usp=sharing  )  （暫未更新）
 
-[g2butf8_win32.zip](https://drive.google.com/file/d/0B_twESMPpEmWdmxyZHVDOUFYemM/view?usp=sharing)
+[g2butf8_win32.zip](https://drive.google.com/file/d/0B_twESMPpEmWdmxyZHVDOUFYemM/view?usp=sharing) （暫未更新）
 
 **Reference 參考資料及函式庫**
 

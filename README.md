@@ -12,6 +12,20 @@ Auto convert locae Chinese  vocabulary program.
 
 使用說明: g2butf8 [檔名]
 
+usage: g2butf8.py [-h] [-r] [-nb] [-nobom] [-x extension [extension ...]] [-t type] [-u userdic] [-nu] files [files ...]
+
+positional arguments:
+  files                 會自動偵測編碼，再轉換成有BOM的UTF-8
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -r, --recursive       包含子目錄(預設不包括)
+  -nb, --nobackup       不要產生.bak備份檔 (預設有)
+  -nobom, --nobom       不要產生BOM標題 (預設有)
+  -x extension [extension ...]  副檔名, (預設為所有檔案)
+  -t type, --type type  轉換方式: g2b 簡轉繁   g2bdic 簡轉繁再加上詞彙轉換
+  -u userdic, --userdic userdic  使用者字典檔名，預設使用 userdic.txt
+  -nu, --nouserdic      不使用自訂字典檔  (預設有，使用userdic.txt)
 若有特別的轉換需求，可以在要轉檔的目錄下放 userdic.txt ，範例內容:
 
 ```

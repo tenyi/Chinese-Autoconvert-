@@ -12,7 +12,7 @@ from jianfan import jtof
 #import chardet
 from chardet.universaldetector import UniversalDetector
 # http://chardet.feedparser.org
-from dic_tw import dic_tw
+#from dic_tw import dic_tw
 import argparse
 
 
@@ -20,6 +20,10 @@ import argparse
 convertType = "g2bdic"
 use_bom = True
 backup = True
+use_userdic = True
+#user dictionary file
+user_dic_file = 'userdic.txt'
+dic_tw = {}
 
 # 最大正向匹配
 def convertVocabulary(string_in, dic):
@@ -91,12 +95,17 @@ def convertFile(target_file):
                     # do backup
                     backup_file = target_file + '.bak'
                     shutil.copy2(target_file, backup_file)
-
                 result_content = u''
                 original_content = u''
                 fp = open(target_file, 'r')
                 original_content = fp.read()
                 fp.close()
+
+                pathdir = os.path.dirname(os.path.abspath(target_file))
+                user_dic_pathname = pathdir + os.path.sep+user_dic_file
+
+                if os.path.exists(user_dic_pathname):
+                    user_dic = getDictionary(user_dic_pathname)
 
                 if original_content.startswith(codecs.BOM_UTF8):
                     original_content.lstrip(codecs.BOM_UTF8)
@@ -114,7 +123,10 @@ def convertFile(target_file):
                         fpw.write(codecs.BOM_UTF8)
                 for line in origlines:
                     if convertType == "g2bdic":
-                        fpw.write(convertVocabulary(line, dic_tw()).encode('UTF-8'))
+                        newline = convertVocabulary(line, dic_tw)
+                        if use_userdic:
+                            newline = convertVocabulary(newline, user_dic)
+                        fpw.write(newline.encode('UTF-8'))
                     else:
                         fpw.write(line.encode('UTF-8'))
                 #fpw.write(newcontent.encode('UTF-8'))
@@ -125,6 +137,31 @@ def convertFile(target_file):
                 print MSG_NO_CONVERT
     else:
         print "File not found! "+target_file+" 檔案不存在! "
+
+
+# get pre-defined dictionary
+def getDictionary(filename):
+    dictionary= {}
+    if os.path.exists(filename):
+        f_encoding = getEncoding(filename)
+        if f_encoding == None:
+            print (u"抱歉, 未能正確判斷字典編碼！\n\n")
+        else:
+            fpr = open(filename, 'r')
+            lines = fpr.readlines()
+            fpr.close()
+
+            if lines[0].startswith(codecs.BOM_UTF8):
+                lines[0] = lines[0].lstrip(codecs.BOM_UTF8)
+
+            for line in lines:
+                if not line.startswith('#'):
+                    line = line.decode(f_encoding)
+                    words = line.split('=')
+                    key = words[0].lstrip().rstrip()
+                    value = words[1].lstrip().rstrip()
+                    dictionary[key] = value
+    return dictionary
 
 def myproc(file_or_dir, extension, recursive):
     if os.path.isdir(file_or_dir):
@@ -159,6 +196,8 @@ if __name__ == "__main__":
     parser.add_argument('-nobom', '--nobom',  action="store_true", help='不要產生BOM標題 (預設有)')
     parser.add_argument('-x', metavar='extension', type=str, nargs='+', help='副檔名, (預設為所有檔案)')
     parser.add_argument('-t', "--type", metavar='type', type=str, nargs=1, help='轉換方式: g2b 簡轉繁 g2bdic 簡轉繁再加上詞彙轉換')
+    parser.add_argument('-u', "--userdic", metavar='userdic', type=str, nargs=1, help='使用者字典檔名，預設使用 userdic.txt')
+    parser.add_argument('-nu', '--nouserdic',  action="store_true", help='不使用自訂字典檔 (預設有，使用userdic.txt)')
     parser.add_argument('files', metavar='files', type=str, nargs='+',
                    help='會自動偵測編碼，再轉換成有BOM的UTF-8')
     argc = len(sys.argv)
@@ -178,7 +217,11 @@ if __name__ == "__main__":
         convertType = args.type[0]
     if args.nobom is not None:
         use_bom = False
-
+    if args.nouserdic:
+        use_userdic = False
+    if args.userdic:
+        user_dic_file = args.u[0]
+    dic_tw = getDictionary("dic_tw.txt")
     filelist = args.files
     for afile in filelist:
         if '*' in afile:

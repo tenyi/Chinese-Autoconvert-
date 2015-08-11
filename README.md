@@ -82,7 +82,7 @@ python g2butf8.py ~/城市獵人/*.srt
 2. 安裝 python-jianfan
 
 ```
-#pip install jianfan
+#pip install jianfan  --allow-unverified jianfan
 
 ```
 
@@ -103,7 +103,7 @@ python g2butf8.py ~/城市獵人/*.srt
 2. 安裝 python-jianfan
 
 ```
-#pip install jianfan
+#pip install jianfan  --allow-unverified jianfan
 
 ```
 

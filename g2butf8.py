@@ -120,9 +120,10 @@ def convert_file(target_file):
 
                 origlines = new_content.splitlines(True)
                 fpw = open(target_file, 'w')
-                if (use_bom):
-                    if not new_content.startswith(codecs.BOM_UTF8.decode("utf8")):
-                        fpw.write(codecs.BOM_UTF8)
+                if use_bom:
+                    #if not new_content.startswith(codecs.BOM_UTF8.decode("utf8")):
+                    #    fpw.write(codecs.BOM_UTF8)
+                    fpw.write(codecs.BOM_UTF8)
                 for line in origlines:
                     if convert_type == "g2bdic":
                         newline = convert_vocabulary(line, dic_tw)
@@ -193,6 +194,8 @@ if __name__ == "__main__":
     # start parse parameters
 
     parser = argparse.ArgumentParser()
+    parser.add_argument('files', metavar='files', type=str, nargs='+',
+                        help='檔案名或目錄名。會自動偵測編碼，再轉換成有BOM的UTF-8')
     parser.add_argument('-r', '--recursive', action="store_true", help='包含子目錄(預設不包括)')
     # parser.add_argument('-b', '--backup', action="store_true", help='產生.bak備份檔')
     parser.add_argument('-nb', '--nobackup', action="store_true", help='不要產生.bak備份檔 (預設有)')
@@ -202,8 +205,7 @@ if __name__ == "__main__":
                         help='轉換方式: g2b 簡轉繁 g2bdic 簡轉繁再加上詞彙轉換 utf8 只轉成utf8')
     parser.add_argument('-u', "--userdic", metavar='userdic', type=str, nargs=1, help='使用者字典檔名，預設使用 userdic.txt')
     parser.add_argument('-nu', '--nouserdic', action="store_true", help='不使用自訂字典檔 (預設有，使用userdic.txt)')
-    parser.add_argument('files', metavar='files', type=str, nargs='+',
-                        help='檔案名或目錄名。會自動偵測編碼，再轉換成有BOM的UTF-8')
+
     argc = len(sys.argv)
 
     if argc == 1:

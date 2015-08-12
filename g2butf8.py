@@ -218,7 +218,7 @@ if __name__ == "__main__":
         backup = False
     if args.type is not None:
         convert_type = args.type[0]
-    if args.nobom is not None:
+    if args.nobom:
         use_bom = False
     if args.nouserdic:
         use_user_dic = False

@@ -87,6 +87,7 @@ def convert_directory(directory, extension, recursive):
 
 def convert_file(target_file):
     if os.path.isfile(target_file):
+        user_dic = {}
         f_encoding = get_encoding(target_file)
         print u"正在轉換", target_file, u" 編碼為: ", f_encoding
         if f_encoding is None:

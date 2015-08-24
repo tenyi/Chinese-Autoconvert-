@@ -115,9 +115,9 @@ def convert_file(target_file):
 
                 utf8content = original_content.decode(f_encoding, 'ignore')
                 if convert_type == "none" or convert_type == "utf8":
-                    new_content = jtof(utf8content)
-                else:
                     new_content = utf8content
+                else:
+                    new_content = jtof(utf8content)
 
                 origlines = new_content.splitlines(True)
                 fpw = open(target_file, 'w')

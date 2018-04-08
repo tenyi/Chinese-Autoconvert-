@@ -11,7 +11,6 @@ from jianfan import jtof
 from chardet.universaldetector import UniversalDetector
 import argparse
 
-
 # global variables
 convert_type = "g2bdic"
 use_bom = True
@@ -91,7 +90,7 @@ def convert_file(target_file):
         f_encoding = get_encoding(target_file)
         print("正在轉換", target_file, " 編碼為: ", f_encoding)
         if f_encoding is None:
-            print ("抱歉, 未能正確判斷編碼！\n\n");
+            print("抱歉, 未能正確判斷編碼！\n\n")
         else:
             if os.path.getsize(target_file) > 0:
                 if backup:
@@ -136,7 +135,7 @@ def convert_file(target_file):
                 # fpw.write(new_content.encode('UTF-8'))
                 fpw.close()
 
-                print (MSG_CONVERT_FINISH)
+                print(MSG_CONVERT_FINISH)
             else:
                 print(MSG_NO_CONVERT)
     else:
@@ -149,7 +148,7 @@ def get_dictionary(filename):
     if os.path.exists(filename):
         f_encoding = get_encoding(filename)
         if f_encoding is None:
-            print ("抱歉, 未能正確判斷字典編碼！\n\n")
+            print("抱歉, 未能正確判斷字典編碼！\n\n")
         else:
             fpr = open(filename, 'r')
             lines = fpr.readlines()
@@ -195,17 +194,40 @@ if __name__ == "__main__":
     # start parse parameters
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('files', metavar='files', type=str, nargs='+',
-                        help='檔案名或目錄名。會自動偵測編碼，再轉換成有BOM的UTF-8')
-    parser.add_argument('-r', '--recursive', action="store_true", help='包含子目錄(預設不包括)')
+    parser.add_argument(
+        'files',
+        metavar='files',
+        type=str,
+        nargs='+',
+        help='檔案名或目錄名。會自動偵測編碼，再轉換成有BOM的UTF-8')
+    parser.add_argument(
+        '-r', '--recursive', action="store_true", help='包含子目錄(預設不包括)')
     # parser.add_argument('-b', '--backup', action="store_true", help='產生.bak備份檔')
-    parser.add_argument('-nb', '--nobackup', action="store_true", help='不要產生.bak備份檔 (預設有)')
-    parser.add_argument('-nobom', '--nobom', action="store_true", help='不要產生BOM標題 (預設有)')
-    parser.add_argument('-x', metavar='extension', type=str, nargs='+', help='副檔名, (預設為所有檔案)')
-    parser.add_argument('-t', "--type", metavar='type', type=str, nargs=1,
-                        help='轉換方式: g2b 簡轉繁 g2bdic 簡轉繁再加上詞彙轉換 utf8 只轉成utf8')
-    parser.add_argument('-u', "--userdic", metavar='userdic', type=str, nargs=1, help='使用者字典檔名，預設使用 userdic.txt')
-    parser.add_argument('-nu', '--nouserdic', action="store_true", help='不使用自訂字典檔 (預設有，使用userdic.txt)')
+    parser.add_argument(
+        '-nb', '--nobackup', action="store_true", help='不要產生.bak備份檔 (預設有)')
+    parser.add_argument(
+        '-nobom', '--nobom', action="store_true", help='不要產生BOM標題 (預設有)')
+    parser.add_argument(
+        '-x', metavar='extension', type=str, nargs='+', help='副檔名, (預設為所有檔案)')
+    parser.add_argument(
+        '-t',
+        "--type",
+        metavar='type',
+        type=str,
+        nargs=1,
+        help='轉換方式: g2b 簡轉繁 g2bdic 簡轉繁再加上詞彙轉換 utf8 只轉成utf8')
+    parser.add_argument(
+        '-u',
+        "--userdic",
+        metavar='userdic',
+        type=str,
+        nargs=1,
+        help='使用者字典檔名，預設使用 userdic.txt')
+    parser.add_argument(
+        '-nu',
+        '--nouserdic',
+        action="store_true",
+        help='不使用自訂字典檔 (預設有，使用userdic.txt)')
 
     argc = len(sys.argv)
 

@@ -6,7 +6,7 @@ import os
 import codecs
 import shutil
 from glob import glob
-import ConfigParser
+import configparser
 from jianfan import jtof
 from chardet.universaldetector import UniversalDetector
 import argparse
@@ -55,9 +55,9 @@ def get_encoding_by_content(content):
 
 # start error message
 # MSG_USAGE = u"使用方法： g2butf8 [filename] 會自動偵測編碼，再轉換成有BOM的UTF-8"
-MSG_TEXT_FILE_NOT_FOUND = u"錯誤 - 檔案找不到："
-MSG_CONVERT_FINISH = u"轉換成功！\n"
-MSG_NO_CONVERT = u"檔案長度為零，不做轉換\n"
+MSG_TEXT_FILE_NOT_FOUND = "錯誤 - 檔案找不到："
+MSG_CONVERT_FINISH = "轉換成功！\n"
+MSG_NO_CONVERT = "檔案長度為零，不做轉換\n"
 # end of error message
 
 dir_separator = os.path.sep
@@ -82,24 +82,24 @@ def convert_directory(directory, extension, recursive):
                 if doconvert:
                     convert_file(fname)
             else:
-                print "檔案不存在! File not found"
+                print("檔案不存在! File not found")
 
 
 def convert_file(target_file):
     if os.path.isfile(target_file):
         user_dic = {}
         f_encoding = get_encoding(target_file)
-        print u"正在轉換", target_file, u" 編碼為: ", f_encoding
+        print("正在轉換", target_file, " 編碼為: ", f_encoding)
         if f_encoding is None:
-            print (u"抱歉, 未能正確判斷編碼！\n\n");
+            print ("抱歉, 未能正確判斷編碼！\n\n");
         else:
             if os.path.getsize(target_file) > 0:
                 if backup:
                     # do backup
                     backup_file = target_file + '.bak'
                     shutil.copy2(target_file, backup_file)
-                result_content = u''
-                original_content = u''
+                result_content = ''
+                original_content = ''
                 fp = open(target_file, 'r')
                 original_content = fp.read()
                 fp.close()
@@ -138,9 +138,9 @@ def convert_file(target_file):
 
                 print (MSG_CONVERT_FINISH)
             else:
-                print MSG_NO_CONVERT
+                print(MSG_NO_CONVERT)
     else:
-        print "File not found! " + target_file + " 檔案不存在! "
+        print("File not found! " + target_file + " 檔案不存在! ")
 
 
 # get pre-defined dictionary
@@ -149,7 +149,7 @@ def get_dictionary(filename):
     if os.path.exists(filename):
         f_encoding = get_encoding(filename)
         if f_encoding is None:
-            print (u"抱歉, 未能正確判斷字典編碼！\n\n")
+            print ("抱歉, 未能正確判斷字典編碼！\n\n")
         else:
             fpr = open(filename, 'r')
             lines = fpr.readlines()
@@ -186,7 +186,7 @@ def my_proc(file_or_dir, extension, recursive):
 
 if __name__ == "__main__":
     # 主程序
-    config = ConfigParser.ConfigParser()
+    config = configparser.ConfigParser()
     config.read('g2butf8.cfg')
     backup = config.getboolean('config', 'backup')
     use_bom = config.getboolean('config', 'use_bom')

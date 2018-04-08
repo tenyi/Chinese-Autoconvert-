@@ -1,0 +1,34 @@
+A Python Library for translation between traditional and simplified chinese.
+
+All documentation is in the "docs" directory and online at
+http://code.google.com/p/python-jianfan/w/list . If you're just getting started, here's
+how we recommend you read the docs:
+
+    * read docs/install.txt for instructions on installing Jianfan.
+    * from there you can jump to the HOWTOs (in docs/howto) for specific
+      problems, and check out the reference (docs/ref) for gory details.
+
+Docs are updated rigorously. If you find any problems in the docs, or think they
+should be clarified in any way, please take 30 seconds to fill out a ticket
+here:
+
+http://code.google.com/p/python-jianfan/issues/list
+
+To get more help:
+    * Join the project, or read the archives, at
+      http://code.google.com/p/python-jianfan/
+
+To contribute to Jianfan:
+
+    * Check out source codes, at
+      hg clone https://python-jianfan.googlecode.com/hg/ python-jianfan
+
+To use Jianfan:
+
+    * from jianfan import jtof, ftoj
+    * print jtof(u'中华')
+    * print ftoj(u'中華')
+
+Jianfan是一个方便、易用、小巧的繁体中文和简体中文之间转换的库，
+提供了两个方法，简体转换为繁体: jtof(unicode_string), 繁体转换为简体: ftoj(unicode_string)
+

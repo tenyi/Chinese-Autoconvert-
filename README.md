@@ -6,7 +6,7 @@ Auto convert locae Chinese  vocabulary program.
 
 中文詞彙自動轉檔程式
 
-目前只做簡轉繁，其他需求請自行修改。所以的轉出檔一律採用UTF-8編碼，並加上BOM。
+目前只做簡轉繁，其他需求請自行修改。所有的轉出檔一律採用UTF-8編碼，並加上BOM。
 
 支援 使用者自訂字典 
 
@@ -29,8 +29,6 @@ optional arguments:
 若有特別的轉換需求，可以在要轉檔的目錄下放 userdic.txt ，範例內容:
 
 ```
-#!text
-
 頭發=頭髮
 內存=記憶體
 ```
@@ -42,8 +40,6 @@ Windows:
 
 
 ```
-#!shell
-
 g2butf8 c:\城市獵人\*.srt
 ```
 
@@ -53,8 +49,6 @@ Mac、Linux:
 
 
 ```
-#!shell
-
 python g2butf8.py ~/城市獵人/*.srt
 ```
 
@@ -62,64 +56,52 @@ python g2butf8.py ~/城市獵人/*.srt
 
  **Details　細節**
 
-原本打算用C語言，因為某些庫編譯太麻煩，相依性過高，後來改用Python實作。
-目前採用Pyhon 2，有空會修改出Python 3版本
+原本打算用C語言，因為某些庫編譯太麻煩，相依性過高，要跨平台太麻煩；因此改用Python實作。
+原本因函式庫限制採用Pyhon 2，現在改用Python 3。
 
 ## Install 安裝 ##
 
-### Linux: ###
+### Linux 或 Mac : ###
 
 
-1. 安裝 Universal Encoding Detector
-
-
-```
-#pip install chardet
-
-```
-
-
-2. 安裝 python-jianfan
-
-```
-#pip install jianfan  --allow-unverified jianfan
-
-```
-
-最後，解開此處的src包，在g2butf8目錄下，執行 python g2butf8.py 即可
-
-### Mac : ###
-
- 
-1. 安裝 Universal Encoding Detector
+1. 安裝 Universal Encoding Detector 與 SetupTools
 
 
 ```
-#pip install chardet
+#pip install -U chardet setuptools
 
 ```
 
 
 2. 安裝 python-jianfan
 
-```
-#pip install jianfan  --allow-unverified jianfan
+有一陣子放到 Python Package裡，可以用pip下載，現在又不行了。因為原作者沒更新，所以我只好自行製作Python 3的安裝蛋，若不放心我製作的版本，可以自行由source code製作。 在此備份Jianfan 0.02版的source code於jianfan目錄下。
 
 ```
+#python -m easy_install jianfan-0.0.2-py3.6.egg
+```
 
+若是Python 2.7 請使用
+
+```
+#python -m easy_install jianfan-0.0.2-py2.7.egg
+```
+其他版本請依此類推。若擔心安全性的朋友，可以自行從googlecode下載，不一定要用我備份的版本。
 
 最後，解開此處的src包，在g2butf8目錄下，執行 python g2butf8.py 即可
 
 ### Windows: ###
   沒有裝Python也沒關係，下載Windows的zip包解開即可用．
 
-[g2butf8_amd64.zip](https://drive.google.com/file/d/0B_twESMPpEmWSEFMTXRSWTBaZWs/view?usp=sharing  )  （暫未更新）
+[g2butf8_amd64.zip](https://drive.google.com/file/d/0B_twESMPpEmWSEFMTXRSWTBaZWs/view?usp=sharing)  （暫未更新）
 
 [g2butf8_win32.zip](https://drive.google.com/file/d/0B_twESMPpEmWdmxyZHVDOUFYemM/view?usp=sharing) （暫未更新）
 
 **Reference 參考資料及函式庫**
 
 [Python简繁转换](http://gerry.lamost.org/blog/?p=603)
+
+[Jianfan](https://pypi.python.org/pypi/Jianfan)
 
 [Universal Encoding Detector](http://chardet.feedparser.org/)
 

@@ -42,7 +42,12 @@ def get_encoding(filename):
     detector.feed(orig_content)
     detector.close()
     fp.close()
-    return detector.result["encoding"]
+    codec = detector.result["encoding"]
+    # 編碼偵測器偶爾會誤判將GB18030判別為GB2312或GBK
+    # GB18030為GB2312和GBK的超集，故直接以GB18030解碼即可
+    if codec == 'GB2312' or codec == 'GBK':
+        codec = 'GB18030'
+    return codec
 
 
 def get_encoding_by_content(content):

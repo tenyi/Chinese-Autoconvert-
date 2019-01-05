@@ -36,7 +36,7 @@ def convert_vocabulary(string_in, dic):
 
 
 def get_encoding(filename):
-    fp = open(filename, 'r')
+    fp = open(filename, 'rb')
     orig_content = fp.read()
     detector = UniversalDetector()
     detector.feed(orig_content)
@@ -98,8 +98,7 @@ def convert_file(target_file):
                     backup_file = target_file + '.bak'
                     shutil.copy2(target_file, backup_file)
                 result_content = ''
-                original_content = ''
-                fp = open(target_file, 'r')
+                fp = open(target_file, 'r', encoding=f_encoding)
                 original_content = fp.read()
                 fp.close()
 
@@ -109,29 +108,25 @@ def convert_file(target_file):
                 if os.path.exists(user_dic_pathname):
                     user_dic = get_dictionary(user_dic_pathname)
 
-                if original_content.startswith(codecs.BOM_UTF8):
-                    original_content.lstrip(codecs.BOM_UTF8)
-
-                utf8content = original_content.decode(f_encoding, 'ignore')
                 if convert_type == "none" or convert_type == "utf8":
-                    new_content = utf8content
+                    new_content = original_content
                 else:
-                    new_content = jtof(utf8content)
+                    new_content = jtof(original_content)
 
                 origlines = new_content.splitlines(True)
-                fpw = open(target_file, 'w')
                 if use_bom:
-                    #if not new_content.startswith(codecs.BOM_UTF8.decode("utf8")):
-                    #    fpw.write(codecs.BOM_UTF8)
-                    fpw.write(codecs.BOM_UTF8)
+                    fpw = open(target_file, 'w', encoding='utf-8-sig')
+                else:
+                    fpw = open(target_file, 'w', encoding='utf-8')
+
                 for line in origlines:
                     if convert_type == "g2bdic":
                         newline = convert_vocabulary(line, dic_tw)
                         if use_user_dic:
                             newline = convert_vocabulary(newline, user_dic)
-                        fpw.write(newline.encode('UTF-8'))
+                        fpw.write(newline)
                     else:
-                        fpw.write(line.encode('UTF-8'))
+                        fpw.write(line)
                 # fpw.write(new_content.encode('UTF-8'))
                 fpw.close()
 
@@ -150,16 +145,12 @@ def get_dictionary(filename):
         if f_encoding is None:
             print("抱歉, 未能正確判斷字典編碼！\n\n")
         else:
-            fpr = open(filename, 'r')
+            fpr = open(filename, 'r', encoding=f_encoding)
             lines = fpr.readlines()
-            fpr.close()
-
-            if lines[0].startswith(codecs.BOM_UTF8):
-                lines[0] = lines[0].lstrip(codecs.BOM_UTF8)
+            fpr.close()          
 
             for line in lines:
                 if not line.startswith('#'):
-                    line = line.decode(f_encoding)
                     words = line.split('=')
                     key = words[0].lstrip().rstrip()
                     value = words[1].lstrip().rstrip()
@@ -186,7 +177,7 @@ def my_proc(file_or_dir, extension, recursive):
 if __name__ == "__main__":
     # 主程序
     config = configparser.ConfigParser()
-    config.read('g2butf8.cfg')
+    config.read('g2butf8.cfg', encoding='utf8')
     backup = config.getboolean('config', 'backup')
     use_bom = config.getboolean('config', 'use_bom')
     convert_type = config.get('config', 'convert')

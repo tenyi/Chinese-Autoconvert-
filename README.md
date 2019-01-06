@@ -105,6 +105,6 @@ python g2butf8.py ~/城市獵人/*.srt
 
 [Universal Encoding Detector](http://chardet.feedparser.org/)
 
-[開放中文轉換](http://code.google.com/p/opencc/ opencc)
+[開放中文轉換](http://code.google.com/p/opencc/opencc)
 
 [Unicode In Python, Completely Demystified](http://farmdev.com/talks/unicode/)

@@ -64,17 +64,17 @@ python g2butf8.py ~/城市獵人/*.srt
 ### Linux 或 Mac : ###
 
 
-1. 安裝 Universal Encoding Detector 與 SetupTools
+1. 安裝 HanziConv與Universal Encoding Detector 
 
 
 ```
-> sudo pip install -U chardet setuptools
+> sudo pip install -U  chardet hanziconv 
 
 ```
 
 
 ### Windows: ###
-C:\> pip install -U chardet hanziconv setuptools
+C:\> pip install -U chardet hanziconv 
 
   沒有裝Python也沒關係，下載Windows的zip包解開即可用．
 

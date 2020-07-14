@@ -1,8 +1,0 @@
-README
-setup.py
-jianfan/__init__.py
-jianfan/charsets.py
-jianfan.egg-info/PKG-INFO
-jianfan.egg-info/SOURCES.txt
-jianfan.egg-info/dependency_links.txt
-jianfan.egg-info/top_level.txt

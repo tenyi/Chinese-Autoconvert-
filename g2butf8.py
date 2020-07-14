@@ -197,8 +197,8 @@ if __name__ == "__main__":
         use_bom = config.getboolean('config', 'use_bom')
         convert_type = config.get('config', 'convert')
     else:
-        backup = true
-        use_bom = true
+        backup = True
+        use_bom = True
         convert_type="g2b"
 
     # start parse parameters

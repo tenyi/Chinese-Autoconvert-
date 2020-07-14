@@ -8,7 +8,7 @@ import shutil
 from glob import glob
 import configparser
 from chardet.universaldetector import UniversalDetector
-from hanziconv import HanziConv
+from jianfan import jtof
 import argparse
 
 # global variables
@@ -120,7 +120,7 @@ def convert_file(target_file):
                 if convert_type == "none" or convert_type == "utf8":
                     new_content = original_content
                 else:
-                    new_content = HanziConv.toTraditional(original_content)
+                    new_content = jtof(original_content)
 
                 origlines = new_content.splitlines(True)
                 if use_bom:

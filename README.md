@@ -57,18 +57,24 @@ python g2butf8.py ~/城市獵人/*.srt
  **Details　細節**
 
 原本打算用C語言，因為某些庫編譯太麻煩，相依性過高，要跨平台太麻煩；因此改用Python實作。
-原本因函式庫限制採用Pyhon 2，現在改用Python 3。
+早期因函式庫限制採用Pyhon 2，現在改用Python 3。
+Jianfan沒有再更新，計畫改用 [hanziconv](https://pypi.org/project/hanziconv/0.3/) 很可惜  [hanziconv](https://pypi.org/project/hanziconv/0.3/) 有過度換詞的問題。
+
+Universal Encoding Detector 偶有偵測編碼錯誤的情況，經大量測試大多數情況都不會有問題，大量轉碼時請注意輸出的原始編碼。
 
 ## Install 安裝 ##
 
 ### Linux 或 Mac : ###
 
+1. Linux應該都內建Python 3，若沒有請自行安裝。舊版本要下python3 ，新版直接執行 python
 
-1. 安裝 HanziConv與Universal Encoding Detector 
+2. 安裝 Universal Encoding Detector  與 [Jianfan](https://pypi.org/project/Jianfan/)  ，因 Jianfan被從pypi移除，只能手動安裝
 
 
 ```
-> sudo pip install -U  chardet hanziconv 
+> sudo pip install -U  chardet  
+>cd jianfan
+>sudo python  setup.py install
 
 ```
 
@@ -76,9 +82,11 @@ python g2butf8.py ~/城市獵人/*.srt
 ### Windows: ###
 1. 安裝[Python for Windows](https://www.python.org/downloads/windows/) ，請選擇 Python 3.x版本
 
-2. 安裝 HanziConv與Universal Encoding Detector 
+2. 安裝 Universal Encoding Detector 與 [Jianfan](https://pypi.org/project/Jianfan/)  ，因 Jianfan被從pypi移除，只能手動安裝
 ```
-C:\> pip install -U chardet hanziconv 
+C> pip install -U chardet  
+C>cd jianfan
+C>python setup.py install
 
 ```
 若沒有裝Python可下載Windows的zip包解開即可用．( Python 2的舊版檔案)

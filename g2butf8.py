@@ -116,11 +116,11 @@ def convert_file(target_file):
                 if original_content.encode().startswith(codecs.BOM_UTF8):
                     original_content.lstrip(codecs.BOM_UTF8)
 
-                utf8content = original_content.encode().decode(f_encoding, 'ignore')
+                #utf8content = original_content.encode().decode(f_encoding, 'ignore')
                 if convert_type == "none" or convert_type == "utf8":
                     new_content = original_content
                 else:
-                    new_content = HanziConv.toTraditional(utf8content)
+                    new_content = HanziConv.toTraditional(original_content)
 
                 origlines = new_content.splitlines(True)
                 if use_bom:

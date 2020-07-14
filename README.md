@@ -68,29 +68,14 @@ python g2butf8.py ~/城市獵人/*.srt
 
 
 ```
-#pip install -U chardet setuptools
+> sudo pip install -U chardet setuptools
 
 ```
 
-
-2. 安裝 python-jianfan
-
-有一陣子放到 Python Package裡，可以用pip下載，現在又不行了。因為原作者沒更新，所以我只好自行製作Python 3的安裝蛋，若不放心我製作的版本，可以自行由source code製作。 在此備份Jianfan 0.02版的source code於jianfan目錄下。
-
-```
-#python -m easy_install jianfan-0.0.2-py3.6.egg
-```
-
-若是Python 2.7 請使用
-
-```
-#python -m easy_install jianfan-0.0.2-py2.7.egg
-```
-其他版本請依此類推。若擔心安全性的朋友，可以自行從googlecode下載，不一定要用我備份的版本。
-
-最後，解開此處的src包，在g2butf8目錄下，執行 python g2butf8.py 即可
 
 ### Windows: ###
+C:\> pip install -U chardet hanziconv setuptools
+
   沒有裝Python也沒關係，下載Windows的zip包解開即可用．
 
 [g2butf8_amd64.zip](https://drive.google.com/file/d/0B_twESMPpEmWSEFMTXRSWTBaZWs/view?usp=sharing)  （暫未更新）

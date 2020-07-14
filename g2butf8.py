@@ -7,8 +7,8 @@ import codecs
 import shutil
 from glob import glob
 import configparser
-from jianfan import jtof
 from chardet.universaldetector import UniversalDetector
+from hanziconv import HanziConv
 import argparse
 
 # global variables
@@ -113,25 +113,27 @@ def convert_file(target_file):
                 if os.path.exists(user_dic_pathname):
                     user_dic = get_dictionary(user_dic_pathname)
 
+                if original_content.encode().startswith(codecs.BOM_UTF8):
+                    original_content.lstrip(codecs.BOM_UTF8)
+
+                utf8content = original_content.encode().decode(f_encoding, 'ignore')
                 if convert_type == "none" or convert_type == "utf8":
-                    new_content = original_content
+                    new_content = utf8content
                 else:
-                    new_content = jtof(original_content)
+                    new_content = HanziConv.toTraditional(utf8content)
 
                 origlines = new_content.splitlines(True)
+                fpw = open(target_file, 'wb')
                 if use_bom:
-                    fpw = open(target_file, 'w', encoding='utf-8-sig')
-                else:
-                    fpw = open(target_file, 'w', encoding='utf-8')
-
+                    fpw.write(codecs.BOM_UTF8)
                 for line in origlines:
                     if convert_type == "g2bdic":
                         newline = convert_vocabulary(line, dic_tw)
                         if use_user_dic:
                             newline = convert_vocabulary(newline, user_dic)
-                        fpw.write(newline)
+                        fpw.write(newline.encode('UTF-8'))
                     else:
-                        fpw.write(line)
+                        fpw.write(line.encode('UTF-8'))
                 # fpw.write(new_content.encode('UTF-8'))
                 fpw.close()
 
@@ -152,10 +154,14 @@ def get_dictionary(filename):
         else:
             fpr = open(filename, 'r', encoding=f_encoding)
             lines = fpr.readlines()
-            fpr.close()          
+            fpr.close()
+
+            if lines[0].encode().startswith(codecs.BOM_UTF8):
+                lines[0] = lines[0].lstrip(codecs.BOM_UTF8)
 
             for line in lines:
                 if not line.startswith('#'):
+                    line = str(line.encode().decode(f_encoding))
                     words = line.split('=')
                     key = words[0].lstrip().rstrip()
                     value = words[1].lstrip().rstrip()
@@ -182,7 +188,7 @@ def my_proc(file_or_dir, extension, recursive):
 if __name__ == "__main__":
     # 主程序
     config = configparser.ConfigParser()
-    config.read('g2butf8.cfg', encoding='utf8')
+    config.read('g2butf8.cfg',encoding="utf-8-sig")
     backup = config.getboolean('config', 'backup')
     use_bom = config.getboolean('config', 'use_bom')
     convert_type = config.get('config', 'convert')

@@ -118,22 +118,23 @@ def convert_file(target_file):
 
                 utf8content = original_content.encode().decode(f_encoding, 'ignore')
                 if convert_type == "none" or convert_type == "utf8":
-                    new_content = utf8content
+                    new_content = original_content
                 else:
                     new_content = HanziConv.toTraditional(utf8content)
 
                 origlines = new_content.splitlines(True)
-                fpw = open(target_file, 'wb')
                 if use_bom:
-                    fpw.write(codecs.BOM_UTF8)
+                    fpw = open(target_file, 'w', encoding='utf-8-sig')
+                else:
+                    fpw = open(target_file, 'w', encoding='utf-8')
                 for line in origlines:
                     if convert_type == "g2bdic":
                         newline = convert_vocabulary(line, dic_tw)
                         if use_user_dic:
                             newline = convert_vocabulary(newline, user_dic)
-                        fpw.write(newline.encode('UTF-8'))
+                        fpw.write(newline)
                     else:
-                        fpw.write(line.encode('UTF-8'))
+                        fpw.write(line)
                 # fpw.write(new_content.encode('UTF-8'))
                 fpw.close()
 
@@ -188,10 +189,17 @@ def my_proc(file_or_dir, extension, recursive):
 if __name__ == "__main__":
     # 主程序
     config = configparser.ConfigParser()
-    config.read('g2butf8.cfg',encoding="utf-8-sig")
-    backup = config.getboolean('config', 'backup')
-    use_bom = config.getboolean('config', 'use_bom')
-    convert_type = config.get('config', 'convert')
+    configFile = 'g2butf8.cfg'
+    if os.path.exists(configFile):
+        f_encoding = get_encoding(configFile)
+        config.read(configFile, encoding=f_encoding)
+        backup = config.getboolean('config', 'backup')
+        use_bom = config.getboolean('config', 'use_bom')
+        convert_type = config.get('config', 'convert')
+    else:
+        backup = true
+        use_bom = true
+        convert_type="g2b"
 
     # start parse parameters
 

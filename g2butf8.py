@@ -7,9 +7,10 @@ import codecs
 import shutil
 from glob import glob
 import configparser
-from chardet.universaldetector import UniversalDetector
-from jianfan import jtof
 import argparse
+from charset_normalizer import detect
+from charset_normalizer import from_bytes
+from opencc import OpenCC
 
 # global variables
 convert_type = "g2bdic"
@@ -20,6 +21,13 @@ use_user_dic = True
 user_dic_file = 'userdic.txt'
 dic_tw = {}
 
+# start error message
+# MSG_USAGE = u"使用方法： g2butf8 [filename] 會自動偵測編碼，再轉換成有BOM的UTF-8"
+MSG_TEXT_FILE_NOT_FOUND = "錯誤 - 檔案找不到："
+MSG_CONVERT_FINISH = "轉換成功！\n"
+MSG_NO_CONVERT = "檔案長度為零，不做轉換\n"
+# end of error message
+dir_separator = os.path.sep
 
 # 最大正向匹配
 def convert_vocabulary(string_in, dic):
@@ -35,36 +43,16 @@ def convert_vocabulary(string_in, dic):
     return string_in
 
 
-def get_encoding(filename):
-    fp = open(filename, 'rb')
-    orig_content = fp.read()
-    detector = UniversalDetector()
-    detector.feed(orig_content)
-    detector.close()
-    fp.close()
-    codec = detector.result["encoding"]
-    # 編碼偵測器偶爾會誤判將GB18030判別為GB2312或GBK
-    # GB18030為GB2312和GBK的超集，故直接以GB18030解碼即可
-    if codec == 'GB2312' or codec == 'GBK':
-        codec = 'GB18030'
-    return codec
-
-
-def get_encoding_by_content(content):
-    detector = UniversalDetector()
-    detector.feed(content)
-    detector.close()
-    return detector.result["encoding"]
-
-
-# start error message
-# MSG_USAGE = u"使用方法： g2butf8 [filename] 會自動偵測編碼，再轉換成有BOM的UTF-8"
-MSG_TEXT_FILE_NOT_FOUND = "錯誤 - 檔案找不到："
-MSG_CONVERT_FINISH = "轉換成功！\n"
-MSG_NO_CONVERT = "檔案長度為零，不做轉換\n"
-# end of error message
-
-dir_separator = os.path.sep
+def detect_file_encoding(file_path):
+    with open(file_path, "rb") as f:
+        content = f.read()
+    result = from_bytes(content)
+    if result.best():
+        print(f"偵測到的編碼: {result.best().encoding}")
+        return result.best().encoding
+    else:
+        print("無法偵測到檔案的編碼")
+        return None
 
 
 def convert_directory(directory, extension, recursive):
@@ -92,7 +80,7 @@ def convert_directory(directory, extension, recursive):
 def convert_file(target_file):
     if os.path.isfile(target_file):
         user_dic = {}
-        f_encoding = get_encoding(target_file)
+        f_encoding = detect_file_encoding(target_file)
         print("正在轉換", target_file, " 編碼為: ", f_encoding)
         if f_encoding is None:
             print("抱歉, 未能正確判斷編碼！\n\n")
@@ -116,11 +104,12 @@ def convert_file(target_file):
                 if original_content.encode().startswith(codecs.BOM_UTF8):
                     original_content.lstrip(codecs.BOM_UTF8)
 
+                cc = OpenCC('s2tw')  # 簡體字轉台灣繁體字，若要加上詞彙可用 s2twp
                 #utf8content = original_content.encode().decode(f_encoding, 'ignore')
                 if convert_type == "none" or convert_type == "utf8":
                     new_content = original_content
                 else:
-                    new_content = jtof(original_content)
+                    new_content = cc.convert(original_content)
 
                 origlines = new_content.splitlines(True)
                 if use_bom:
@@ -149,7 +138,7 @@ def convert_file(target_file):
 def get_dictionary(filename):
     dictionary = {}
     if os.path.exists(filename):
-        f_encoding = get_encoding(filename)
+        f_encoding = detect_file_encoding(filename)
         if f_encoding is None:
             print("抱歉, 未能正確判斷字典編碼！\n\n")
         else:
@@ -186,23 +175,9 @@ def my_proc(file_or_dir, extension, recursive):
                 convert_file(file_or_dir)
 
 
-if __name__ == "__main__":
+def main(): 
     # 主程序
-    config = configparser.ConfigParser()
-    configFile = 'g2butf8.cfg'
-    if os.path.exists(configFile):
-        f_encoding = get_encoding(configFile)
-        config.read(configFile, encoding=f_encoding)
-        backup = config.getboolean('config', 'backup')
-        use_bom = config.getboolean('config', 'use_bom')
-        convert_type = config.get('config', 'convert')
-    else:
-        backup = True
-        use_bom = True
-        convert_type="g2b"
-
     # start parse parameters
-
     parser = argparse.ArgumentParser()
     parser.add_argument(
         'files',
@@ -257,6 +232,20 @@ if __name__ == "__main__":
         use_user_dic = False
     if args.userdic:
         user_dic_file = args.u[0]
+
+    config = configparser.ConfigParser()
+    configFile = 'g2butf8.cfg'
+    if os.path.exists(configFile):
+        f_encoding = detect_file_encoding(configFile)
+        config.read(configFile, encoding=f_encoding)
+        backup = config.getboolean('config', 'backup')
+        use_bom = config.getboolean('config', 'use_bom')
+        convert_type = config.get('config', 'convert')
+    else:
+        backup = True
+        use_bom = True
+        convert_type="g2b"
+
     dic_tw = get_dictionary("dic_tw.txt")
     file_list = args.files
     for a_file in file_list:
@@ -266,3 +255,6 @@ if __name__ == "__main__":
                 my_proc(bfile, args.x, args.recursive)
         else:
             my_proc(a_file, args.x, args.recursive)
+
+if __name__ == "__main__":
+    main()

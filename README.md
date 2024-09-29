@@ -52,48 +52,47 @@ Mac、Linux:
 python g2butf8.py ~/城市獵人/*.srt
 ```
 
-
-
  **Details　細節**
 
 原本打算用C語言，因為某些庫編譯太麻煩，相依性過高，要跨平台太麻煩；因此改用Python實作。
 早期因函式庫限制採用Pyhon 2，現在改用Python 3。
 Jianfan沒有再更新，計畫改用 [hanziconv](https://pypi.org/project/hanziconv/0.3/) 很可惜  [hanziconv](https://pypi.org/project/hanziconv/0.3/) 有過度換詞的問題。
 
-Universal Encoding Detector 偶有偵測編碼錯誤的情況，經大量測試大多數情況都不會有問題，大量轉碼時請注意輸出的原始編碼。
+2024年改用 [charset-normalizer](https://pypi.org/project/charset-normalizer/) 與
+[開放中文轉換 opencc-python-reimplemented](https://pypi.org/project/opencc-python-reimplemented/)
 
-## Install 安裝 ##
+~~[Universal Encoding Detector](https://pypi.org/project/chardet/) 偶有偵測編碼錯誤的情況，經大量測試大多數情況都不會有問題，大量轉碼時請注意輸出的原始編碼。~~
 
-### Linux 或 Mac : ###
+由於現在大多數人的檔案都已採用 UTF-8編碼，故無大量測試[charset-normalizer](https://pypi.org/project/charset-normalizer/)機會。
+
+## Install 安裝 
+
+### Linux 或 Mac : 
 
 1. Linux應該都內建Python 3，若沒有請自行安裝。舊版本要下python3 ，新版直接執行 python
 
-2. 安裝 Universal Encoding Detector  與 [Jianfan](https://pypi.org/project/Jianfan/)  ，因 Jianfan被從pypi移除，只能手動安裝
+2. 安裝 [charset-normalizer](https://pypi.org/project/charset-normalizer/) 及 [opencc-python-reimplemented](https://pypi.org/project/opencc-python-reimplemented/)
 
 
 ```
-> sudo pip install -U  chardet  
->cd jianfan
->sudo python  setup.py install
+> sudo pip install -r requirements.txt 
+#或是
+> sudo pip install -U charset-normalizer opencc-python-reimplemented
 
 ```
 
 
-### Windows: ###
-1. 安裝[Python for Windows](https://www.python.org/downloads/windows/) ，請選擇 Python 3.x版本
+### Windows: 
+1. 安裝[Python for Windows](https://www.python.org/downloads/windows/) ，請選擇 Python 3.9之後版本
 
 2. 安裝 Universal Encoding Detector 與 [Jianfan](https://pypi.org/project/Jianfan/)  ，因 Jianfan被從pypi移除，只能手動安裝
 ```
-C> pip install -U chardet  
-C>cd jianfan
-C>python setup.py install
+> sudo pip install -r requirements.txt 
+#或是
+> sudo pip install -U charset-normalizer opencc-python-reimplemented
 
 ```
-若沒有裝Python可下載Windows的zip包解開即可用．( Python 2的舊版檔案)
 
-[g2butf8_amd64.zip](https://drive.google.com/file/d/0B_twESMPpEmWSEFMTXRSWTBaZWs/view?usp=sharing)  （暫未更新）
-
-[g2butf8_win32.zip](https://drive.google.com/file/d/0B_twESMPpEmWdmxyZHVDOUFYemM/view?usp=sharing) （暫未更新）
 
 **Reference 參考資料及函式庫**
 
@@ -106,3 +105,7 @@ C>python setup.py install
 [開放中文轉換](http://code.google.com/p/opencc/opencc)
 
 [Unicode In Python, Completely Demystified](http://farmdev.com/talks/unicode/)
+
+[Charset Detection, for Everyone 👋 charset-normalizer](https://pypi.org/project/charset-normalizer/) 
+
+[開放中文轉換 opencc-python-reimplemented](https://pypi.org/project/opencc-python-reimplemented/)

@@ -104,7 +104,7 @@ def convert_file(target_file):
                 if original_content.encode().startswith(codecs.BOM_UTF8):
                     original_content.lstrip(codecs.BOM_UTF8)
 
-                cc = OpenCC('s2tw')  # 簡體字轉台灣繁體字，若要加上詞彙可用 s2twp
+                cc = OpenCC('s2twp')  # 簡體字轉台灣繁體字加上詞彙可用 s2twp
                 #utf8content = original_content.encode().decode(f_encoding, 'ignore')
                 if convert_type == "none" or convert_type == "utf8":
                     new_content = original_content

@@ -6,7 +6,7 @@ Auto convert locae Chinese  vocabulary program.
 
 中文詞彙自動轉檔程式
 
-目前只做簡轉繁，其他需求請自行修改。所有的轉出檔一律採用UTF-8編碼，並加上BOM。
+目前只做簡轉繁，其他需求請自行修改。所有的轉出檔一律採用UTF-8編碼，可選擇是否加上BOM。由於現在大多數人的檔案都已採用 UTF-8編碼，故預設改為不加BOM。
 
 支援 使用者自訂字典 
 
@@ -15,18 +15,19 @@ Auto convert locae Chinese  vocabulary program.
 usage: g2butf8.py [-h] [-r] [-nb] [-nobom] [-x extension [extension ...]] [-t type] [-u userdic] [-nu] files [files ...]
 
 positional arguments:
-  files                 會自動偵測編碼，再轉換成有BOM的UTF-8
+  files                 會自動偵測編碼，再轉換成無BOM的UTF-8
 
 optional arguments:
   -h, --help            show this help message and exit
   -r, --recursive       包含子目錄(預設不包括)
   -nb, --nobackup       不要產生.bak備份檔 (預設有)
-  -nobom, --nobom       不要產生BOM標題 (預設有)
+  -nobom, --nobom       不要產生BOM標題 (預設沒有)
+  -bom, --bom           產生BOM標題 (預設沒有)
   -x extension [extension ...]  副檔名, (預設為所有檔案)
   -t type, --type type  轉換方式: g2b 簡轉繁   g2bdic 簡轉繁再加上詞彙轉換
   -u userdic, --userdic userdic  使用者字典檔名，預設使用 userdic.txt
-  -nu, --nouserdic      不使用自訂字典檔  (預設有，使用userdic.txt)
-若有特別的轉換需求，可以在要轉檔的目錄下放 userdic.txt ，範例內容:
+  -nu, --nouserdic      不使用自訂字典檔  (預設沒有，使用userdic.txt)
+若有特別的轉換需求，可以在要轉檔的目錄下放 userdic.txt，範例內容:
 
 ```
 頭發=頭髮
@@ -69,7 +70,7 @@ Jianfan沒有再更新，計畫改用 [hanziconv](https://pypi.org/project/hanzi
 
 ### Linux 或 Mac : 
 
-1. Linux應該都內建Python 3，若沒有請自行安裝。舊版本要下python3 ，新版直接執行 python
+1. Linux應該都內建Python 3，若沒有請自行安裝，需要 Python 3.11以上版本。直接執行 python3 g2butf8.py
 
 2. 安裝 [charset-normalizer](https://pypi.org/project/charset-normalizer/) 及 [opencc-python-reimplemented](https://pypi.org/project/opencc-python-reimplemented/)
 
@@ -83,7 +84,7 @@ Jianfan沒有再更新，計畫改用 [hanziconv](https://pypi.org/project/hanzi
 
 
 ### Windows: 
-1. 安裝[Python for Windows](https://www.python.org/downloads/windows/) ，請選擇 Python 3.9之後版本
+1. 安裝[Python for Windows](https://www.python.org/downloads/windows/) ，請選擇 Python 3.11 之後版本
 
 2. 安裝 Universal Encoding Detector 與 [Jianfan](https://pypi.org/project/Jianfan/)  ，因 Jianfan被從pypi移除，只能手動安裝
 ```

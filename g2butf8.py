@@ -6,7 +6,7 @@
 
 本程式提供以下功能：
 1. 自動偵測文字檔案編碼
-2. 將檔案轉換為 UTF-8 編碼（預設帶 BOM）
+2. 將檔案轉換為 UTF-8 編碼（預設不帶 BOM）
 3. 將簡體中文轉換為繁體中文（使用 OpenCC）
 4. 支援自定義詞典進行詞彙轉換
 
@@ -24,16 +24,13 @@ Python版本要求：3.11+
 """
 
 from __future__ import annotations
-import sys
-import os
 import codecs
 import shutil
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 from dataclasses import dataclass, field
-import configparser
 import argparse
-from charset_normalizer import CharsetMatches, detect
+from charset_normalizer import CharsetMatches
 from charset_normalizer import from_bytes
 from opencc import OpenCC
 

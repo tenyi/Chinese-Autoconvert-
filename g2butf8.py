@@ -1,260 +1,314 @@
 #!/usr/bin/env python
 # -*- coding: utf8 -*-
 
+"""
+中文詞彙自動轉碼程式 (Chinese Text Auto-Converter)
+
+本程式提供以下功能：
+1. 自動偵測文字檔案編碼
+2. 將檔案轉換為 UTF-8 編碼（預設帶 BOM）
+3. 將簡體中文轉換為繁體中文（使用 OpenCC）
+4. 支援自定義詞典進行詞彙轉換
+
+使用方法：
+    python g2butf8.py [檔案或目錄] [-r] [-nb] [-nobom]
+
+參數說明：
+    -r, --recursive: 遞迴處理子目錄
+    -nb, --nobackup: 不建立備份檔案
+    -nobom, --nobom: 不在輸出檔案加入 BOM 標記
+
+作者：Tenyi
+版本：2.0.0
+Python版本要求：3.11+
+"""
+
+from __future__ import annotations
 import sys
 import os
 import codecs
 import shutil
-from glob import glob
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
+from dataclasses import dataclass, field
 import configparser
 import argparse
-from charset_normalizer import detect
+from charset_normalizer import CharsetMatches, detect
 from charset_normalizer import from_bytes
 from opencc import OpenCC
 
-# global variables
-convert_type = "g2bdic"
-use_bom = True
-backup = True
-use_user_dic = True
-# user dictionary file
-user_dic_file = 'userdic.txt'
-dic_tw = {}
+# 全域變數設定
+@dataclass
+class GlobalConfig:
+    """全域設定類別"""
+    convert_type: str = "g2bdic"  # 轉換類型
+    use_bom: bool = True         # 是否使用 BOM
+    backup: bool = True          # 是否建立備份
+    use_user_dic: bool = True    # 是否使用使用者字典
+    user_dic_file: str = "userdic.txt"  # 使用者字典檔名
+    dic_tw: Dict[str, str] = field(default_factory=dict)     # 繁體中文字典
 
-# start error message
-# MSG_USAGE = u"使用方法： g2butf8 [filename] 會自動偵測編碼，再轉換成有BOM的UTF-8"
-MSG_TEXT_FILE_NOT_FOUND = "錯誤 - 檔案找不到："
-MSG_CONVERT_FINISH = "轉換成功！\n"
-MSG_NO_CONVERT = "檔案長度為零，不做轉換\n"
-# end of error message
-dir_separator = os.path.sep
+# 初始化全域設定
+config = GlobalConfig()
 
-# 最大正向匹配
-def convert_vocabulary(string_in, dic):
+# 錯誤訊息定義
+class ConversionMessages:
+    """轉換過程相關訊息"""
+    FILE_NOT_FOUND = "錯誤 - 檔案找不到："
+    CONVERT_FINISH = "轉換成功！"
+    NO_CONVERT = "檔案長度為零，不做轉換"
+    ENCODING_DETECT_FAILED = "無法偵測到檔案的編碼"
+
+def convert_vocabulary(text: str, dictionary: Dict[str, str]) -> str:
+    """
+    使用最大正向匹配算法進行詞彙轉換
+    
+    Args:
+        text: 要轉換的文字
+        dictionary: 轉換用字典
+    
+    Returns:
+        轉換後的文字
+    """
     i = 0
-    while i < len(string_in):
-        for j in range(len(string_in) - i, 0, -1):
-            if string_in[i:][:j] in dic:
-                t = dic[string_in[i:][:j]]
-                string_in = string_in[:i] + t + string_in[i:][j:]
-                i += len(t) - 1
+    while i < len(text):
+        for j in range(len(text) - i, 0, -1):
+            if text[i:][:j] in dictionary:
+                replacement = dictionary[text[i:][:j]]
+                text = text[:i] + replacement + text[i+j:]
+                i += len(replacement) - 1
                 break
         i += 1
-    return string_in
+    return text
 
-
-def detect_file_encoding(file_path):
-    with open(file_path, "rb") as f:
-        content = f.read()
-    result = from_bytes(content)
-    if result.best():
-        print(f"偵測到的編碼: {result.best().encoding}")
-        return result.best().encoding
-    else:
-        print("無法偵測到檔案的編碼")
+def detect_file_encoding(file_path: Union[str, Path]) -> Optional[str]:
+    """
+    偵測檔案編碼
+    
+    Args:
+        file_path: 檔案路徑
+    
+    Returns:
+        檔案編碼，如果無法偵測則回傳 None
+    """
+    try:
+        with open(file_path, "rb") as f:
+            content = f.read()
+        result: CharsetMatches = from_bytes(content)
+        if result.best():
+            detected_encoding = result.best().encoding
+            print(f"偵測到的編碼: {detected_encoding}")
+            return detected_encoding
+        print(ConversionMessages.ENCODING_DETECT_FAILED)
+        return None
+    except Exception as e:
+        print(f"偵測編碼時發生錯誤: {e}")
         return None
 
+def convert_directory(directory: Union[str, Path], extension: Optional[List[str]], recursive: bool) -> None:
+    """
+    轉換目錄下的檔案
+    
+    Args:
+        directory: 目錄路徑
+        extension: 檔案副檔名
+        recursive: 是否遞迴處理子目錄
+    """
+    dir_path = Path(directory)
+    if not dir_path.is_dir():
+        print(f"{ConversionMessages.FILE_NOT_FOUND} {directory}")
+        return
 
-def convert_directory(directory, extension, recursive):
-    files = os.listdir(directory)
-    for f in files:
-        fname = directory + dir_separator + f
-        if os.path.isdir(fname):
-            if recursive:
-                convert_directory(fname, extension, recursive)
-        else:
-            if os.path.isfile(fname):
-                doconvert = False
-                if extension is None:
-                    doconvert = True
-                else:
-                    for ext in extension:
-                        if f.lower().endswith(ext):
-                            doconvert = True
-                if doconvert:
-                    convert_file(fname)
-            else:
-                print("檔案不存在! File not found")
+    for file in dir_path.iterdir():
+        if file.is_file():
+            if extension is None or file.suffix.lstrip('.').lower() in [ext.lstrip('.').lower() for ext in extension]:
+                convert_file(file)
+        elif file.is_dir() and recursive:
+            convert_directory(file, extension, recursive)
 
+def convert_file(target_file: Union[str, Path]) -> None:
+    """
+    轉換單一檔案的編碼和內容
+    
+    Args:
+        target_file: 目標檔案路徑
+    """
+    target_path = Path(target_file)
+    if not target_path.is_file():
+        print(f"{ConversionMessages.FILE_NOT_FOUND} {target_file}")
+        return
 
-def convert_file(target_file):
-    if os.path.isfile(target_file):
-        user_dic = {}
-        f_encoding = detect_file_encoding(target_file)
-        print("正在轉換", target_file, " 編碼為: ", f_encoding)
-        if f_encoding is None:
-            print("抱歉, 未能正確判斷編碼！\n\n")
-        else:
-            if os.path.getsize(target_file) > 0:
-                if backup:
-                    # do backup
-                    backup_file = target_file + '.bak'
-                    shutil.copy2(target_file, backup_file)
-                result_content = ''
-                fp = open(target_file, 'r', encoding=f_encoding)
-                original_content = fp.read()
-                fp.close()
+    # 檢查檔案大小
+    if target_path.stat().st_size == 0:
+        print(ConversionMessages.NO_CONVERT)
+        return
 
-                path_dir = os.path.dirname(os.path.abspath(target_file))
-                user_dic_pathname = path_dir + os.path.sep + user_dic_file
+    # 偵測檔案編碼
+    file_encoding = detect_file_encoding(target_path)
+    if file_encoding is None:
+        return
 
-                if os.path.exists(user_dic_pathname):
-                    user_dic = get_dictionary(user_dic_pathname)
+    print(f"正在轉換 {target_file} 編碼為: {file_encoding}")
 
-                if original_content.encode().startswith(codecs.BOM_UTF8):
-                    original_content.lstrip(codecs.BOM_UTF8)
+    # 建立備份
+    if config.backup:
+        backup_path = target_path.with_suffix(target_path.suffix + ".bak")
+        shutil.copy2(target_path, backup_path)
 
-                cc = OpenCC('s2twp')  # 簡體字轉台灣繁體字加上詞彙可用 s2twp
-                #utf8content = original_content.encode().decode(f_encoding, 'ignore')
-                if convert_type == "none" or convert_type == "utf8":
-                    new_content = original_content
-                else:
-                    new_content = cc.convert(original_content)
+    try:
+        # 讀取檔案內容
+        with open(target_path, "r", encoding=file_encoding) as fp:
+            content = fp.read()
 
-                origlines = new_content.splitlines(True)
-                if use_bom:
-                    fpw = open(target_file, 'w', encoding='utf-8-sig')
-                else:
-                    fpw = open(target_file, 'w', encoding='utf-8')
-                for line in origlines:
-                    if convert_type == "g2bdic":
-                        newline = convert_vocabulary(line, dic_tw)
-                        if use_user_dic:
-                            newline = convert_vocabulary(newline, user_dic)
-                        fpw.write(newline)
-                    else:
-                        fpw.write(line)
-                # fpw.write(new_content.encode('UTF-8'))
-                fpw.close()
+        # 處理 BOM
+        if content.encode().startswith(codecs.BOM_UTF8):
+            content = content.lstrip(codecs.BOM_UTF8.decode())
 
-                print(MSG_CONVERT_FINISH)
-            else:
-                print(MSG_NO_CONVERT)
-    else:
-        print("File not found! " + target_file + " 檔案不存在! ")
+        # 進行轉換
+        match config.convert_type:
+            case "none" | "utf8":
+                new_content = content
+            case _:
+                cc = OpenCC("s2twp")
+                new_content = cc.convert(content)
 
+        # 套用字典轉換
+        if config.convert_type == "g2bdic":
+            for line in new_content.splitlines(True):
+                converted_line = convert_vocabulary(line, config.dic_tw)
+                if config.use_user_dic:
+                    user_dic_path = target_path.parent / config.user_dic_file
+                    if user_dic_path.exists():
+                        user_dic = get_dictionary(user_dic_path)
+                        converted_line = convert_vocabulary(converted_line, user_dic)
 
-# get pre-defined dictionary
-def get_dictionary(filename):
+        # 寫入檔案
+        encoding = "utf-8-sig" if config.use_bom else "utf-8"
+        with open(target_path, "w", encoding=encoding) as fpw:
+            fpw.write(new_content)
+
+        print(ConversionMessages.CONVERT_FINISH)
+
+    except Exception as e:
+        print(f"轉換過程發生錯誤: {e}")
+
+def get_dictionary(filename: Union[str, Path]) -> Dict[str, str]:
+    """
+    讀取字典檔案
+    
+    Args:
+        filename: 字典檔案路徑
+    
+    Returns:
+        字典內容
+    """
     dictionary = {}
-    if os.path.exists(filename):
-        f_encoding = detect_file_encoding(filename)
-        if f_encoding is None:
-            print("抱歉, 未能正確判斷字典編碼！\n\n")
-        else:
-            fpr = open(filename, 'r', encoding=f_encoding)
-            lines = fpr.readlines()
-            fpr.close()
+    file_path = Path(filename)
+    if file_path.exists():
+        file_encoding = detect_file_encoding(file_path)
+        if file_encoding is None:
+            print(ConversionMessages.ENCODING_DETECT_FAILED)
+            return dictionary
 
-            if lines[0].encode().startswith(codecs.BOM_UTF8):
-                lines[0] = lines[0].lstrip(codecs.BOM_UTF8)
+        with open(file_path, "r", encoding=file_encoding) as fp:
+            lines = fp.readlines()
 
-            for line in lines:
-                if not line.startswith('#'):
-                    line = str(line.encode().decode(f_encoding))
-                    words = line.split('=')
-                    key = words[0].lstrip().rstrip()
-                    value = words[1].lstrip().rstrip()
-                    dictionary[key] = value
+        for line in lines:
+            if not line.startswith("#"):
+                key, value = line.strip().split("=")
+                dictionary[key] = value
+
     return dictionary
 
+def my_proc(file_or_dir: Union[str, Path], extension: Optional[List[str]], recursive: bool) -> None:
+    """
+    處理檔案或目錄
+    
+    Args:
+        file_or_dir: 檔案或目錄路徑
+        extension: 檔案副檔名
+        recursive: 是否遞迴處理子目錄
+    """
+    path = Path(file_or_dir)
+    if path.is_dir():
+        convert_directory(path, extension, recursive)
+    elif path.is_file():
+        if extension is None or path.suffix.lstrip('.').lower() in [ext.lstrip('.').lower() for ext in extension]:
+            convert_file(path)
 
-def my_proc(file_or_dir, extension, recursive):
-    if os.path.isdir(file_or_dir):
-        convert_directory(file_or_dir, extension, recursive)
-    else:
-        if os.path.isfile(file_or_dir):
-            do_convert = False
-            if extension is None:
-                do_convert = True
-            else:
-                for ext in extension:
-                    if file_or_dir.lower().endswith(ext):
-                        do_convert = True
-            if do_convert:
-                convert_file(file_or_dir)
-
-
-def main(): 
-    # 主程序
-    # start parse parameters
+def main() -> None:
+    """
+    主程式
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        'files',
-        metavar='files',
+        "files",
+        metavar="files",
         type=str,
-        nargs='+',
-        help='檔案名或目錄名。會自動偵測編碼，再轉換成有BOM的UTF-8')
+        nargs="+",
+        help="檔案名或目錄名。會自動偵測編碼，再轉換成有BOM的UTF-8",
+    )
     parser.add_argument(
-        '-r', '--recursive', action="store_true", help='包含子目錄(預設不包括)')
-    # parser.add_argument('-b', '--backup', action="store_true", help='產生.bak備份檔')
+        "-r", "--recursive", action="store_true", help="包含子目錄(預設不包括)"
+    )
     parser.add_argument(
-        '-nb', '--nobackup', action="store_true", help='不要產生.bak備份檔 (預設有)')
+        "-nb", "--nobackup", action="store_true", help="不要產生.bak備份檔 (預設有)"
+    )
     parser.add_argument(
-        '-nobom', '--nobom', action="store_true", help='不要產生BOM標題 (預設有)')
+        "-nobom", "--nobom", action="store_true", help="不要產生BOM標題 (預設沒有)"
+    )
     parser.add_argument(
-        '-x', metavar='extension', type=str, nargs='+', help='副檔名, (預設為所有檔案)')
+        "-bom", "--bom", action="store_true", help="產生BOM標題 (預設沒有)"
+    )
     parser.add_argument(
-        '-t',
+        "-x", metavar="extension", type=str, nargs="+", help="副檔名, (預設為所有檔案)"
+    )
+    parser.add_argument(
+        "-t",
         "--type",
-        metavar='type',
+        metavar="type",
         type=str,
         nargs=1,
-        help='轉換方式: g2b 簡轉繁 g2bdic 簡轉繁再加上詞彙轉換 utf8 只轉成utf8')
+        help="轉換方式: g2b 簡轉繁 g2bdic 簡轉繁再加上詞彙轉換 utf8 只轉成utf8",
+    )
     parser.add_argument(
-        '-u',
+        "-u",
         "--userdic",
-        metavar='userdic',
+        metavar="userdic",
         type=str,
         nargs=1,
-        help='使用者字典檔名，預設使用 userdic.txt')
+        help="使用者字典檔名，預設使用 userdic.txt",
+    )
     parser.add_argument(
-        '-nu',
-        '--nouserdic',
+        "-nu",
+        "--nouserdic",
         action="store_true",
-        help='不使用自訂字典檔 (預設有，使用userdic.txt)')
+        help="不使用自訂字典檔 (預設有，使用userdic.txt)",
+    )
 
-    argc = len(sys.argv)
-
-    if argc == 1:
-        parser.print_help()
-        exit(0)
-    # end of parse parameters.
     args = parser.parse_args()
 
     if args.nobackup:
-        backup = False
+        config.backup = False
     if args.type is not None:
-        convert_type = args.type[0]
+        config.convert_type = args.type[0]
     if args.nobom:
-        use_bom = False
+        config.use_bom = False
+    if args.bom:
+        config.use_bom = True
     if args.nouserdic:
-        use_user_dic = False
+        config.use_user_dic = False
     if args.userdic:
-        user_dic_file = args.u[0]
+        config.user_dic_file = args.userdic[0]
 
-    config = configparser.ConfigParser()
-    configFile = 'g2butf8.cfg'
-    if os.path.exists(configFile):
-        f_encoding = detect_file_encoding(configFile)
-        config.read(configFile, encoding=f_encoding)
-        backup = config.getboolean('config', 'backup')
-        use_bom = config.getboolean('config', 'use_bom')
-        convert_type = config.get('config', 'convert')
-    else:
-        backup = True
-        use_bom = True
-        convert_type="g2b"
+    config.dic_tw = get_dictionary("dic_tw.txt")
 
-    dic_tw = get_dictionary("dic_tw.txt")
-    file_list = args.files
-    for a_file in file_list:
-        if '*' in a_file:
-            a_list = glob(a_file)
-            for bfile in a_list:
-                my_proc(bfile, args.x, args.recursive)
+    for file in args.files:
+        if "*" in file:
+            for path in Path().glob(file):
+                my_proc(path, args.x, args.recursive)
         else:
-            my_proc(a_file, args.x, args.recursive)
+            my_proc(file, args.x, args.recursive)
 
 if __name__ == "__main__":
     main()

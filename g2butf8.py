@@ -6,7 +6,7 @@
 
 本程式提供以下功能：
 1. 自動偵測文字檔案編碼
-2. 將檔案轉換為 UTF-8 編碼（預設不帶 BOM）
+2. 將檔案轉換為 UTF-8 編碼（預設帶 BOM，可用 -nobom 或設定檔關閉）
 3. 將簡體中文轉換為繁體中文（使用 OpenCC）
 4. 支援自定義詞典進行詞彙轉換
 
@@ -24,6 +24,8 @@ Python版本要求：3.11+
 """
 
 from __future__ import annotations
+import configparser
+import glob
 import shutil
 import sys
 import unicodedata
@@ -58,6 +60,16 @@ if getattr(sys, "frozen", False):
     BASE_DIR = Path(sys.executable).resolve().parent
 else:
     BASE_DIR = Path(__file__).resolve().parent
+
+# 設定檔：與 dic_tw.txt 同樣放在程式所在目錄
+CONFIG_FILE = BASE_DIR / "g2butf8.cfg"
+
+# 中文編碼與日文編碼名稱（charset-normalizer 的命名），供編碼偵測時調整候選順序
+CHINESE_ENCODINGS = ("gb18030", "gb2312", "gbk", "cp936", "hz", "big5", "big5hkscs", "cp950")
+JAPANESE_ENCODINGS = (
+    "cp932", "shift_jis", "shift_jis_2004", "shift_jisx0213",
+    "euc_jp", "euc_jis_2004", "euc_jisx0213", "iso2022_jp",
+)
 
 # 備份檔副檔名；遍歷目錄或展開 glob 時會略過，避免把備份再轉一次而產生 .bak.bak
 BACKUP_EXT = ".bak"
@@ -150,8 +162,20 @@ def detect_file_encoding(file_path: Union[str, Path]) -> Optional[str]:
         with open(file_path, "rb") as f:
             content = f.read()
         result: CharsetMatches = from_bytes(content)
-        if result.best():
-            detected_encoding = result.best().encoding
+        best = result.best()
+        if best:
+            detected_encoding = best.encoding
+            # 短文字時 charset-normalizer 常把 GB18030 / Big5 誤判成 cp949（韓文）或 utf_16_be，
+            # 轉出亂碼。本程式處理的是中文檔，因此只要候選清單裡有中文編碼，就優先採用。
+            # 以下情況維持原判斷，不套用中文優先：
+            #   - 有 BOM：編碼已由 BOM 確定
+            #   - utf_8 / ascii：嚴格解碼成功即幾乎可確定，且 UTF-8 中文也可能被列出 gb18030 候選
+            #   - 日文編碼：避免把日文檔誤當成 GB18030
+            if not (best.bom or detected_encoding in ("utf_8", "ascii") or detected_encoding in JAPANESE_ENCODINGS):
+                detected_encoding = next(
+                    (match.encoding for match in result if match.encoding in CHINESE_ENCODINGS),
+                    detected_encoding,
+                )
             print(f"偵測到的編碼: {detected_encoding}")
             return detected_encoding
         print(ConversionMessages.ENCODING_DETECT_FAILED)
@@ -319,17 +343,65 @@ def my_proc(file_or_dir: Union[str, Path], extension: Optional[List[str]], recur
         if extension is None or path.suffix.lstrip('.').lower() in [ext.lstrip('.').lower() for ext in extension]:
             convert_file(path)
 
+def load_config(config_file: Union[str, Path]) -> None:
+    """
+    讀取設定檔，覆寫 GlobalConfig 的預設值
+
+    優先順序：GlobalConfig 預設值 < 設定檔 < 命令列參數。
+    設定檔不存在、缺少 [config] 區段或某個欄位時，沿用目前的值。
+
+    Args:
+        config_file: 設定檔路徑
+    """
+    path = Path(config_file)
+    if not path.exists():
+        return
+    parser = configparser.ConfigParser()
+    # 設定檔可能有 BOM（例如用記事本存檔），以 utf-8-sig 讀取兩種都能處理
+    parser.read(path, encoding="utf-8-sig")
+    config.backup = parser.getboolean("config", "backup", fallback=config.backup)
+    config.use_bom = parser.getboolean("config", "use_bom", fallback=config.use_bom)
+    config.convert_type = parser.get("config", "convert", fallback=config.convert_type)
+
+def expand_file_args(files: List[str]) -> List[str]:
+    """
+    展開命令列的檔案參數
+
+    - 檔案或目錄確實存在時直接使用，不當成萬用字元樣式；
+      避免「[字幕組] 第01集.srt」這類含方括號的檔名被 glob 誤解成字元集合。
+    - 含「*」的參數用 glob.glob 展開（支援絕對路徑，Path().glob 不支援），
+      並略過備份檔；使用者明確指定 .bak 檔名時仍照常處理。
+
+    Args:
+        files: 命令列傳入的檔案參數
+
+    Returns:
+        展開後的路徑清單
+    """
+    expanded: List[str] = []
+    for file in files:
+        if "*" in file and not Path(file).exists():
+            expanded.extend(
+                path for path in sorted(glob.glob(file))
+                if not path.lower().endswith(BACKUP_EXT)
+            )
+        else:
+            expanded.append(file)
+    return expanded
+
 def main() -> None:
     """
     主程式
     """
+    load_config(CONFIG_FILE)
+
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "files",
         metavar="files",
         type=str,
         nargs="+",
-        help="檔案名或目錄名。會自動偵測編碼，再轉換成有BOM的UTF-8",
+        help="檔案名或目錄名。會自動偵測編碼，再轉換成 UTF-8（預設帶 BOM）",
     )
     parser.add_argument(
         "-r", "--recursive", action="store_true", help="包含子目錄(預設不包括)"
@@ -338,10 +410,10 @@ def main() -> None:
         "-nb", "--nobackup", action="store_true", help="不要產生.bak備份檔 (預設有)"
     )
     parser.add_argument(
-        "-nobom", "--nobom", action="store_true", help="不要產生BOM標題 (預設沒有)"
+        "-nobom", "--nobom", action="store_true", help="不要產生BOM標題 (預設有)"
     )
     parser.add_argument(
-        "-bom", "--bom", action="store_true", help="產生BOM標題 (預設沒有)"
+        "-bom", "--bom", action="store_true", help="產生BOM標題 (預設有；可覆寫設定檔的 use_bom = false)"
     )
     parser.add_argument(
         "-x", metavar="extension", type=str, nargs="+", help="副檔名, (預設為所有檔案)"
@@ -385,18 +457,18 @@ def main() -> None:
     if args.userdic:
         config.user_dic_file = args.userdic[0]
 
+    # 設定檔中的值不經 argparse 檢查，打錯字時明確報錯，而不是默默當成 g2b
+    if config.convert_type not in CONVERT_TYPES:
+        parser.error(
+            f"設定檔 {CONFIG_FILE.name} 的 convert = {config.convert_type} 不合法"
+            f"（可用：{', '.join(CONVERT_TYPES)}）"
+        )
+
     # 從程式所在目錄讀取詞彙表，不依賴執行時的工作目錄
     config.dic_tw = get_dictionary(BASE_DIR / "dic_tw.txt")
 
-    for file in args.files:
-        if "*" in file:
-            for path in Path().glob(file):
-                # glob 展開時略過備份檔；使用者明確指定 .bak 檔名時仍照常處理
-                if path.name.lower().endswith(BACKUP_EXT):
-                    continue
-                my_proc(path, args.x, args.recursive)
-        else:
-            my_proc(file, args.x, args.recursive)
+    for file in expand_file_args(args.files):
+        my_proc(file, args.x, args.recursive)
 
 if __name__ == "__main__":
     main()

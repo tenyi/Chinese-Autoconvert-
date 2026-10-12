@@ -184,3 +184,119 @@ def test_directory_skips_backup_files(temp_dir, isolated_config):
     g2butf8.convert_directory(temp_dir, None, False)
 
     assert not os.path.exists(os.path.join(temp_dir, "a.txt.bak.bak"))
+
+
+# ---- 設定檔、glob、編碼偵測、BOM 預設 ----
+
+def write_cfg(path, body, bom=False):
+    """寫出設定檔；bom=True 時模擬記事本存檔加上 BOM"""
+    with open(path, "wb") as f:
+        f.write((b"\xef\xbb\xbf" if bom else b"") + body.encode("utf-8"))
+
+
+@pytest.mark.parametrize("bom", [False, True], ids=["無BOM", "有BOM"])
+def test_load_config_overrides_defaults(temp_dir, isolated_config, bom):
+    """設定檔的值必須覆寫 GlobalConfig 預設值（有無 BOM 皆可）"""
+    cfg = os.path.join(temp_dir, "g2butf8.cfg")
+    write_cfg(cfg, "[config]\nconvert = g2b\nbackup = false\nuse_bom = false\n", bom)
+
+    g2butf8.load_config(cfg)
+
+    assert (isolated_config.convert_type, isolated_config.backup, isolated_config.use_bom) == ("g2b", False, False)
+
+
+def test_load_config_missing_keys_keep_defaults(temp_dir, isolated_config):
+    """設定檔缺欄位時沿用預設值，不可拋例外"""
+    cfg = os.path.join(temp_dir, "g2butf8.cfg")
+    write_cfg(cfg, "[config]\nbackup = false\n")
+
+    g2butf8.load_config(cfg)
+
+    assert isolated_config.backup is False
+    assert isolated_config.use_bom is True
+    assert isolated_config.convert_type == "g2bdic"
+
+
+def run_main(monkeypatch, cfg_path, argv):
+    """以指定設定檔與命令列參數執行 main()"""
+    monkeypatch.setattr(g2butf8, "CONFIG_FILE", Path(cfg_path))
+    monkeypatch.setattr(sys, "argv", ["g2butf8.py"] + argv)
+    g2butf8.main()
+
+
+def test_cli_overrides_config(temp_dir, isolated_config, monkeypatch):
+    """命令列參數優先於設定檔"""
+    cfg = os.path.join(temp_dir, "g2butf8.cfg")
+    write_cfg(cfg, "[config]\nuse_bom = false\nbackup = true\n")
+    target = os.path.join(temp_dir, "cli.txt")
+    with open(target, "w", encoding="gb18030") as f:
+        f.write(LONG_GB_TEXT)
+
+    run_main(monkeypatch, cfg, ["-bom", "-nb", target])
+
+    with open(target, "rb") as f:
+        assert f.read().startswith(b"\xef\xbb\xbf")
+    assert not os.path.exists(target + ".bak")
+
+
+def test_invalid_convert_in_config_rejected(temp_dir, isolated_config, monkeypatch):
+    """設定檔的 convert 打錯字時必須報錯結束，不可默默執行"""
+    cfg = os.path.join(temp_dir, "g2butf8.cfg")
+    write_cfg(cfg, "[config]\nconvert = g2bdc\n")
+
+    with pytest.raises(SystemExit) as exc:
+        run_main(monkeypatch, cfg, [os.path.join(temp_dir, "none.txt")])
+    assert exc.value.code != 0
+
+
+def test_default_output_has_bom(temp_dir, isolated_config):
+    """預設輸出帶 BOM 的 UTF-8"""
+    target = os.path.join(temp_dir, "bom.txt")
+    with open(target, "w", encoding="gb18030") as f:
+        f.write(LONG_GB_TEXT)
+    isolated_config.backup = False
+
+    convert_file(target)
+
+    with open(target, "rb") as f:
+        assert f.read().startswith(b"\xef\xbb\xbf")
+
+
+def test_expand_file_args_absolute_glob(temp_dir):
+    """絕對路徑的萬用字元要能展開，且略過 .bak"""
+    for name in ["a.srt", "b.srt", "a.srt.bak", "c.txt"]:
+        open(os.path.join(temp_dir, name), "w").close()
+
+    result = g2butf8.expand_file_args([os.path.join(temp_dir, "*.srt*")])
+
+    assert sorted(os.path.basename(p) for p in result) == ["a.srt", "b.srt"]
+
+
+def test_expand_file_args_bracket_filename(temp_dir):
+    """含方括號的實際檔名不可被當成 glob 字元集合"""
+    name = os.path.join(temp_dir, "[字幕組] 第*集.srt")
+    try:
+        open(name, "w").close()
+    except OSError:
+        pytest.skip("此檔案系統不允許檔名含 *")
+    assert g2butf8.expand_file_args([name]) == [name]
+
+
+@pytest.mark.parametrize("text,encoding", [
+    ("这是软件", "gb18030"),
+    ("我们的字幕", "gb18030"),
+    ("這是軟體", "big5"),
+    ("繁體中文字幕檔案", "big5"),
+    ("这是软件", "utf-8"),
+    ("日本語のテキストです", "shift_jis"),
+])
+def test_detect_short_text_encoding(temp_dir, text, encoding):
+    """短文字也要偵測出能正確解碼的編碼（原本 GB/Big5 短文字會被誤判成 cp949 / utf_16_be）"""
+    target = os.path.join(temp_dir, "short.txt")
+    with open(target, "wb") as f:
+        f.write(text.encode(encoding))
+
+    detected = detect_file_encoding(target)
+
+    with open(target, "rb") as f:
+        assert f.read().decode(detected) == text

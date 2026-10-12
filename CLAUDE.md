@@ -31,7 +31,7 @@ python g2butf8.py -r path\to\dir          # 遞迴子目錄
 python g2butf8.py -t g2b file.txt         # 僅簡轉繁，不套詞彙表
 python g2butf8.py -t utf8 file.txt        # 只重新編碼成 UTF-8，不轉簡繁
 python g2butf8.py -nu -x .srt .ass file   # 關閉 userdic、限制副檔名
-python g2butf8.py *.srt                   # 支援 glob（目前僅相對路徑，見下方已知問題）
+python g2butf8.py D:\subs\*.srt            # 支援 glob（相對或絕對路徑）
 
 # 打包成 Windows 執行檔
 pyinstaller g2butf8.spec
@@ -43,29 +43,31 @@ pyinstaller g2butf8.spec
 ## 架構與資料流
 
 ```
-main() → argparse → my_proc() → convert_directory() / convert_file()
-                                       │
-                                       ├─ detect_file_encoding() ← charset-normalizer 偵測編碼
-                                       ├─ looks_binary()         ← 疑似二進位檔就略過
-                                       ├─ OpenCC("s2twp")        ← 簡→繁（台灣用語）
-                                       ├─ get_dictionary()       ← 讀 dic_tw.txt / userdic.txt
-                                       ├─ convert_vocabulary()   ← 最大正向匹配套詞彙
-                                       ├─ 備份 .bak（已存在則不覆蓋）
-                                       └─ 寫回檔案（utf-8-sig 或 utf-8）
+main() → load_config() → argparse → expand_file_args() → my_proc() → convert_directory() / convert_file()
+                                                                          │
+                                                                          ├─ detect_file_encoding() ← charset-normalizer 偵測編碼
+                                                                          ├─ looks_binary()         ← 疑似二進位檔就略過
+                                                                          ├─ OpenCC("s2twp")        ← 簡→繁（台灣用語）
+                                                                          ├─ get_dictionary()       ← 讀 dic_tw.txt / userdic.txt
+                                                                          ├─ convert_vocabulary()   ← 最大正向匹配套詞彙
+                                                                          ├─ 備份 .bak（已存在則不覆蓋）
+                                                                          └─ 寫回檔案（utf-8-sig 或 utf-8）
 ```
 
 關鍵模組：
 
 | 函式 / 變數 | 位置 | 角色 |
 |---|---|---|
-| `GlobalConfig` / `config` | `g2butf8.py:40` / `:50` | 全域設定（轉換方式、BOM、備份、使用者字典） |
-| `CONVERT_TYPES` | `g2butf8.py:53` | `g2b` / `g2bdic`（預設）/ `utf8` / `none`；`-t` 以此限制合法值 |
-| `BASE_DIR` | `g2butf8.py:57` | 程式所在目錄（打包後為 exe 所在目錄）；`dic_tw.txt` 從這裡讀，不受工作目錄影響 |
-| `convert_vocabulary()` | `g2butf8.py:78` | 最大正向匹配，每個位置只試到字典最長詞長度（`get_max_len()`）；規則見 `dic_history.csv` |
-| `looks_binary()` | `g2butf8.py:118` | 解碼後可疑字元（Cc/Cn/Cs）比例超過 `BINARY_THRESHOLD`（1%）即視為二進位檔 |
-| `detect_file_encoding()` | `g2butf8.py:139` | charset-normalizer 偵測編碼 |
-| `convert_file()` | `g2butf8.py:186` | 單檔流程：解碼 → 二進位檢查 → 轉換 → 套字典 → 備份 → 寫回；全部在記憶體完成後才寫檔 |
-| `get_dictionary()` | `g2butf8.py:271` | 讀字典；略過註解、空行與沒有 `=` 的行，只切第一個 `=` |
+| `GlobalConfig` / `config` | `g2butf8.py:42` / `:52` | 全域設定預設值（轉換方式 `g2bdic`、**加 BOM**、備份、使用者字典） |
+| `CONVERT_TYPES` | `g2butf8.py:55` | `g2b` / `g2bdic`（預設）/ `utf8` / `none`；`-t` 與設定檔的 `convert` 都以此檢查 |
+| `BASE_DIR` | `g2butf8.py:59` | 程式所在目錄（打包後為 exe 所在目錄）；`dic_tw.txt`、`g2butf8.cfg` 從這裡讀，不受工作目錄影響 |
+| `convert_vocabulary()` | `g2butf8.py:90` | 最大正向匹配，每個位置只試到字典最長詞長度（`get_max_len()`）；規則見 `dic_history.csv` |
+| `looks_binary()` | `g2butf8.py:130` | 解碼後可疑字元（Cc/Cn/Cs）比例超過 `BINARY_THRESHOLD`（1%）即視為二進位檔 |
+| `detect_file_encoding()` | `g2butf8.py:151` | charset-normalizer 偵測；候選有中文編碼時優先採用（修正短文字誤判成 cp949/utf_16_be），有 BOM、utf_8/ascii、日文編碼時維持原判斷 |
+| `convert_file()` | `g2butf8.py:210` | 單檔流程：解碼 → 二進位檢查 → 轉換 → 套字典 → 備份 → 寫回；全部在記憶體完成後才寫檔 |
+| `get_dictionary()` | `g2butf8.py:295` | 讀字典；略過註解、空行與沒有 `=` 的行，只切第一個 `=` |
+| `load_config()` | `g2butf8.py:346` | 讀 `g2butf8.cfg`（有無 BOM 皆可），缺欄位沿用預設 |
+| `expand_file_args()` | `g2butf8.py:366` | 展開命令列檔案參數：含 `*` 且檔案不存在才用 `glob.glob`（支援絕對路徑），略過 `.bak` |
 
 - `userdic.txt` 從**被轉換檔案所在目錄**讀取，每個檔案只讀一次。
 - 遍歷目錄與 glob 展開時會略過 `.bak` 備份檔（避免產生 `.bak.bak`）。
@@ -78,13 +80,14 @@ main() → argparse → my_proc() → convert_directory() / convert_file()
 
 **修改詞彙表前請先看 `dic_history.csv`**：它記錄了歷次新增/刪除/編輯的原因（直譯詞另有意義、錯字、量詞特例等），新詞彙要沿用同樣的命名與排版紀律。
 
-## ⚠ 已知問題 / 不一致（尚未處理）
+## 設定優先順序
 
-1. **`g2butf8.cfg` 目前沒有被讀取**：重構成 `GlobalConfig` 後設定檔讀取邏輯已移除，cfg 內的值不生效，預設值全由 `GlobalConfig` 決定。
-2. **BOM 預設值說法不一**：`GlobalConfig.use_bom = True`（實際會加 BOM），但 `README.md`、模組 docstring、`-nobom`/`-bom` 的 help 都說「預設不加 BOM」。
-3. **絕對路徑 glob 會崩潰**：`Path().glob()` 不支援絕對路徑樣式（如 `D:\dir\*.srt`），會拋 `NotImplementedError`。
-4. **短文字編碼誤判**：charset-normalizer 對很短的文字可能誤判（例如 4 個字的 GB18030 被判成 cp949），轉出亂碼。
-5. **依賴宣告有兩份**：`pyproject.toml` + `uv.lock`（以此為準）與舊的 `requirements.txt`（其中 `configparser`、`argparse` 是標準函式庫，不需安裝）。`requirements.txt` 待清理。
+`GlobalConfig` 預設值 → `g2butf8.cfg`（`load_config()`）→ 命令列參數，後者覆寫前者。`convert` 允許 `CONVERT_TYPES` 中的值，其他值會報錯結束；`backup` / `use_bom` 為 boolean。`target_encoding` 欄位目前未使用（輸出一律 UTF-8）。
+
+## ⚠ 已知限制
+
+1. 編碼偵測採「中文優先」：韓文（cp949/EUC-KR）等非中文、非日文的非 Unicode 檔案，若候選中也有中文編碼，可能被判成中文編碼。本工具以中文檔為對象，屬刻意取捨。
+2. 依賴只以 `pyproject.toml` + `uv.lock` 宣告（`requirements.txt` 已移除）；不用 uv 時可 `pip install charset-normalizer opencc-python-reimplemented`。
 
 ## 環境
 

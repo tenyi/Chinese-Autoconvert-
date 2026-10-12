@@ -1,4 +1,0 @@
-opencc-python-reimplemented
-charset-normalizer
-configparser
-argparse

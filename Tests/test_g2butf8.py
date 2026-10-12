@@ -300,3 +300,27 @@ def test_detect_short_text_encoding(temp_dir, text, encoding):
 
     with open(target, "rb") as f:
         assert f.read().decode(detected) == text
+
+
+@pytest.mark.parametrize("simplified,expected", [
+    # 副詞「只要」：OpenCC 會在這些字後誤轉成「隻要」，須由詞彙表修正
+    ("这只要努力就好", "這只要努力就好"),
+    ("那只要你愿意", "那只要你願意"),
+    ("别只要求别人", "別只要求別人"),
+    ("不单只要钱", "不單只要錢"),
+    ("但是只要有钱就好", "但是只要有錢就好"),
+    ("还是只要你", "還是只要你"),
+    ("最多只要三天", "最多只要三天"),
+    ("差不多只要一小时", "差不多只要一小時"),
+    # 量詞用法仍要轉成「隻」
+    ("这只猫很可爱", "這隻貓很可愛"),
+    ("一只要飞的鸟", "一隻要飛的鳥"),
+    ("每只要多少钱", "每隻要多少錢"),
+    # 既有補丁不可退化
+    ("这只是测试", "這只是測試"),
+])
+def test_real_dictionary_zhi_yao(simplified, expected):
+    """用實際的 dic_tw.txt 驗證「只」的量詞與副詞用法"""
+    from opencc import OpenCC
+    dic_tw = get_dictionary(g2butf8.BASE_DIR / "dic_tw.txt")
+    assert convert_vocabulary(OpenCC("s2twp").convert(simplified), dic_tw) == expected

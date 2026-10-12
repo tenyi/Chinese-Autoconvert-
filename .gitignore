@@ -1,1 +1,9 @@
 *.pyc
+
+# 虛擬環境（由 uv sync 產生，依平台不同不可共用）
+.venv/
+
+# Python 建置產物與快取
+build/
+*.egg-info/
+__pycache__/

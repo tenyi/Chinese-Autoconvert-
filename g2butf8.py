@@ -24,8 +24,9 @@ Python版本要求：3.11+
 """
 
 from __future__ import annotations
-import codecs
 import shutil
+import sys
+import unicodedata
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 from dataclasses import dataclass, field
@@ -48,6 +49,24 @@ class GlobalConfig:
 # 初始化全域設定
 config = GlobalConfig()
 
+# 合法的轉換方式
+CONVERT_TYPES = ("g2b", "g2bdic", "utf8", "none")
+
+# 程式所在目錄：dic_tw.txt 一律從這裡找，不受執行時的工作目錄（CWD）影響。
+# PyInstaller 打包後 __file__ 會指向暫存解壓目錄，因此改用執行檔所在位置。
+if getattr(sys, "frozen", False):
+    BASE_DIR = Path(sys.executable).resolve().parent
+else:
+    BASE_DIR = Path(__file__).resolve().parent
+
+# 備份檔副檔名；遍歷目錄或展開 glob 時會略過，避免把備份再轉一次而產生 .bak.bak
+BACKUP_EXT = ".bak"
+
+# 解碼後「可疑字元」比例超過此門檻即視為二進位檔
+BINARY_THRESHOLD = 0.01
+# 文字檔常見的控制字元（tab、換行、換頁等），不算可疑
+TEXT_CONTROL_CHARS = set("\t\n\r\x0b\x0c")
+
 # 錯誤訊息定義
 class ConversionMessages:
     """轉換過程相關訊息"""
@@ -56,27 +75,66 @@ class ConversionMessages:
     NO_CONVERT = "檔案長度為零，不做轉換"
     ENCODING_DETECT_FAILED = "無法偵測到檔案的編碼"
 
-def convert_vocabulary(text: str, dictionary: Dict[str, str]) -> str:
+def convert_vocabulary(text: str, dictionary: Dict[str, str], max_len: Optional[int] = None) -> str:
     """
     使用最大正向匹配算法進行詞彙轉換
-    
+
+    每個位置最多只嘗試到字典最長詞的長度，不必從整行長度往下試；
+    結果以 list 收集再 join，避免每次替換都重組整個字串。
+    替換後的文字不會再被掃描，從被替換詞之後繼續比對。
+
     Args:
         text: 要轉換的文字
         dictionary: 轉換用字典
-    
+        max_len: 字典最長詞長度；未提供時自動計算（大量呼叫時請預先算好傳入）
+
     Returns:
         轉換後的文字
     """
+    if not dictionary:
+        return text
+    if max_len is None:
+        max_len = get_max_len(dictionary)
+    result: List[str] = []
     i = 0
-    while i < len(text):
-        for j in range(len(text) - i, 0, -1):
-            if text[i:][:j] in dictionary:
-                replacement = dictionary[text[i:][:j]]
-                text = text[:i] + replacement + text[i+j:]
-                i += len(replacement) - 1
+    n = len(text)
+    while i < n:
+        for j in range(min(max_len, n - i), 0, -1):
+            word = text[i:i + j]
+            if word in dictionary:
+                result.append(dictionary[word])
+                i += j
                 break
-        i += 1
-    return text
+        else:
+            # 此位置沒有任何詞命中，原字保留
+            result.append(text[i])
+            i += 1
+    return "".join(result)
+
+def get_max_len(dictionary: Dict[str, str]) -> int:
+    """取得字典最長詞長度（空字典回傳 0）"""
+    return max(map(len, dictionary), default=0)
+
+def looks_binary(content: str) -> bool:
+    """
+    判斷解碼後的內容是否像二進位檔
+
+    編碼偵測對二進位檔不一定回傳 None，可能猜成某個「什麼都能解」的編碼，
+    解出來的內容會夾雜大量控制字元（Cc）、未定義字元（Cn）或代理字元（Cs），以此判別。
+
+    Args:
+        content: 解碼後的文字
+
+    Returns:
+        可疑字元比例超過 BINARY_THRESHOLD 時回傳 True
+    """
+    if not content:
+        return False
+    suspicious = sum(
+        1 for c in content
+        if c not in TEXT_CONTROL_CHARS and unicodedata.category(c) in ("Cc", "Cn", "Cs")
+    )
+    return suspicious / len(content) > BINARY_THRESHOLD
 
 def detect_file_encoding(file_path: Union[str, Path]) -> Optional[str]:
     """
@@ -118,6 +176,8 @@ def convert_directory(directory: Union[str, Path], extension: Optional[List[str]
 
     for file in dir_path.iterdir():
         if file.is_file():
+            if file.name.lower().endswith(BACKUP_EXT):
+                continue
             if extension is None or file.suffix.lstrip('.').lower() in [ext.lstrip('.').lower() for ext in extension]:
                 convert_file(file)
         elif file.is_dir() and recursive:
@@ -147,19 +207,19 @@ def convert_file(target_file: Union[str, Path]) -> None:
 
     print(f"正在轉換 {target_file} 編碼為: {file_encoding}")
 
-    # 建立備份
-    if config.backup:
-        backup_path = target_path.with_suffix(target_path.suffix + ".bak")
-        shutil.copy2(target_path, backup_path)
-
+    # 先在記憶體中完成全部轉換，成功後才備份並寫回；
+    # 避免轉換途中出錯時留下錯誤的備份或被清空的原檔。
     try:
         # 讀取檔案內容
         with open(target_path, "r", encoding=file_encoding) as fp:
             content = fp.read()
 
-        # 處理 BOM
-        if content.encode().startswith(codecs.BOM_UTF8):
-            content = content.lstrip(codecs.BOM_UTF8.decode())
+        if looks_binary(content):
+            print("看起來是二進位檔，略過此檔")
+            return
+
+        # 處理 BOM：部分編碼名稱（如 utf_8）解碼後會保留 U+FEFF，在此移除
+        content = content.removeprefix("\ufeff")
 
         # 進行轉換
         match config.convert_type:
@@ -171,13 +231,32 @@ def convert_file(target_file: Union[str, Path]) -> None:
 
         # 套用字典轉換
         if config.convert_type == "g2bdic":
+            # 使用者字典每個檔案只讀一次（不在每一行重讀）
+            user_dic: Dict[str, str] = {}
+            if config.use_user_dic:
+                user_dic_path = target_path.parent / config.user_dic_file
+                if user_dic_path.exists():
+                    user_dic = get_dictionary(user_dic_path)
+            # 最長詞長度每個檔案只算一次，不在每一行重算
+            dic_tw_max = get_max_len(config.dic_tw)
+            user_dic_max = get_max_len(user_dic)
+            converted_lines: List[str] = []
             for line in new_content.splitlines(True):
-                converted_line = convert_vocabulary(line, config.dic_tw)
-                if config.use_user_dic:
-                    user_dic_path = target_path.parent / config.user_dic_file
-                    if user_dic_path.exists():
-                        user_dic = get_dictionary(user_dic_path)
-                        converted_line = convert_vocabulary(converted_line, user_dic)
+                converted_line = convert_vocabulary(line, config.dic_tw, dic_tw_max)
+                converted_line = convert_vocabulary(converted_line, user_dic, user_dic_max)
+                converted_lines.append(converted_line)
+            # 必須把轉換結果寫回 new_content，否則字典轉換等於沒做
+            new_content = "".join(converted_lines)
+
+        # 建立備份
+        # 備份已存在時不覆蓋：重複轉換同一檔案時，保留最早（未轉換）的原檔，
+        # 否則第二次轉換會用已轉過的內容蓋掉唯一的原始備份。
+        if config.backup:
+            backup_path = target_path.with_suffix(target_path.suffix + BACKUP_EXT)
+            if backup_path.exists():
+                print(f"備份檔已存在，保留原備份不覆蓋：{backup_path}")
+            else:
+                shutil.copy2(target_path, backup_path)
 
         # 寫入檔案
         encoding = "utf-8-sig" if config.use_bom else "utf-8"
@@ -211,9 +290,16 @@ def get_dictionary(filename: Union[str, Path]) -> Dict[str, str]:
             lines = fp.readlines()
 
         for line in lines:
-            if not line.startswith("#"):
-                key, value = line.strip().split("=")
-                dictionary[key] = value
+            # 字典有無 BOM 都要能讀：移除殘留的 U+FEFF，否則第一行的「#」註解或詞彙會比對失敗
+            line = line.removeprefix("\ufeff")
+            # 略過註解、空行，以及沒有「=」的格式錯誤行
+            if line.startswith("#") or "=" not in line:
+                continue
+            # 只切第一個「=」，讓替換詞本身可以包含「=」
+            key, value = line.split("=", 1)
+            key = key.strip()
+            if key:
+                dictionary[key] = value.strip()
 
     return dictionary
 
@@ -266,6 +352,7 @@ def main() -> None:
         metavar="type",
         type=str,
         nargs=1,
+        choices=CONVERT_TYPES,
         help="轉換方式: g2b 簡轉繁 g2bdic 簡轉繁再加上詞彙轉換 utf8 只轉成utf8",
     )
     parser.add_argument(
@@ -298,11 +385,15 @@ def main() -> None:
     if args.userdic:
         config.user_dic_file = args.userdic[0]
 
-    config.dic_tw = get_dictionary("dic_tw.txt")
+    # 從程式所在目錄讀取詞彙表，不依賴執行時的工作目錄
+    config.dic_tw = get_dictionary(BASE_DIR / "dic_tw.txt")
 
     for file in args.files:
         if "*" in file:
             for path in Path().glob(file):
+                # glob 展開時略過備份檔；使用者明確指定 .bak 檔名時仍照常處理
+                if path.name.lower().endswith(BACKUP_EXT):
+                    continue
                 my_proc(path, args.x, args.recursive)
         else:
             my_proc(file, args.x, args.recursive)

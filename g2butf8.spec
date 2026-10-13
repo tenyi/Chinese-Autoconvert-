@@ -3,8 +3,8 @@
 block_cipher = None
 
 
-a = Analysis(['g2butf8'],
-             pathex=['D:\\git\\Chinese-Autoconvert'],
+a = Analysis(['g2butf8.py'],
+             pathex=[],
              binaries=[],
              datas=[],
              hiddenimports=[],
